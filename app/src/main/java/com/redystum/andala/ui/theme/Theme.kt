@@ -1,6 +1,5 @@
 package com.redystum.andala.ui.theme
 
-import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -10,29 +9,47 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
-
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
-)
+import androidx.compose.ui.graphics.Color
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
+    primary = AndaPink,
     onPrimary = Color.White,
+    primaryContainer = AndaPinkContainerLight,
+    onPrimaryContainer = AndaPinkDark,
+    secondary = Color(0xFF4A4A4A),
     onSecondary = Color.White,
+    secondaryContainer = Color(0xFFE0E0E0),
+    onSecondaryContainer = Color(0xFF1A1A1A),
+    tertiary = AndaPinkDark,
     onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    background = BackgroundLight,
+    onBackground = OnBackgroundLight,
+    surface = SurfaceLight,
+    onSurface = OnSurfaceLight,
+    surfaceVariant = SurfaceVariantLight,
+    onSurfaceVariant = OnSurfaceVariantLight,
+    outline = OutlineLight
 )
 
+private val DarkColorScheme = darkColorScheme(
+    primary = AndaPinkLight,
+    onPrimary = Color(0xFF3F001D),
+    primaryContainer = AndaPinkContainerDark,
+    onPrimaryContainer = Color(0xFFFFD8E4),
+    secondary = Color(0xFFCCCCCC),
+    onSecondary = Color(0xFF1E1E1E),
+    secondaryContainer = Color(0xFF383838),
+    onSecondaryContainer = Color(0xFFEDEDED),
+    tertiary = AndaPink,
+    onTertiary = Color.White,
+    background = BackgroundDark,
+    onBackground = OnBackgroundDark,
+    surface = SurfaceDark,
+    onSurface = OnSurfaceDark,
+    surfaceVariant = SurfaceVariantDark,
+    onSurfaceVariant = OnSurfaceVariantDark,
+    outline = OutlineDark
+)
 @Composable
 fun AndaLaTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
