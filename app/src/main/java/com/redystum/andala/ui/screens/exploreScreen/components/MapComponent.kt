@@ -38,10 +38,11 @@ fun MapComponent(
                     val coords = GeoPoint(p.coordinates.first, p.coordinates.second)
 
                     var drawable = ContextCompat.getDrawable(mapView.context, R.drawable.hotel)
-                    if (selectedPousadas.contains(p)) {
+                    if (highlightPousada.contains(p) && selectedPousadas.contains(p)) {
+                        drawable = ContextCompat.getDrawable(mapView.context, R.drawable.hotel_selected_highlight)
+                    } else if (selectedPousadas.contains(p)) {
                         drawable = ContextCompat.getDrawable(mapView.context, R.drawable.hotel_selected)
-                    }
-                    if (highlightPousada.contains(p)) {
+                    } else if (highlightPousada.contains(p)) {
                         drawable = ContextCompat.getDrawable(mapView.context, R.drawable.hotel_highlight)
                     }
 

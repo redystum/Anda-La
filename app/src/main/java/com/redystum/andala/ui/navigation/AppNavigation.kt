@@ -1,5 +1,6 @@
 package com.redystum.andala.ui.navigation
 
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -12,9 +13,8 @@ import com.redystum.andala.ui.screens.RouteResultScreen
 import com.redystum.andala.ui.viewmodel.TripViewModel
 
 @Composable
-fun AppNavigation(
-    tripViewModel: TripViewModel = viewModel()
-) {
+fun AppNavigation(innerPadding: PaddingValues) {
+    val tripViewModel: TripViewModel = viewModel()
     val navController = rememberNavController()
 
     NavHost(
@@ -24,6 +24,7 @@ fun AppNavigation(
         // Ecra 1
         composable<Screen.Explore> {
             ExploreScreen(
+                innerPadding = innerPadding,
                 viewModel = tripViewModel,
                 onNavigateToPlan = {
                     navController.navigate(Screen.PlanTrip)

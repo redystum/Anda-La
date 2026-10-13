@@ -95,7 +95,9 @@ fun PousadaMapScreen(
                                 if (selectedPousadas.contains(pousada)) {
                                     selectedPousadas.remove(pousada)
                                 } else {
-                                    selectedPousadas.add(pousada)
+                                    if (selectedPousadas.size < 3) {
+                                        selectedPousadas.add(pousada)
+                                    }
                                 }
                             },
                             isSelected = selectedPousadas.contains(pousada),
@@ -127,6 +129,7 @@ fun PousadaMapScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
+            // todo uncomment
             MapComponent(screen = 0, pousadas, highlightPousadas, selectedPousadas)
         }
     }
