@@ -2,7 +2,6 @@ package com.redystum.andala.ui.screens.exploreScreen
 
 import android.preference.PreferenceManager
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -11,10 +10,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.redystum.andala.R
 import com.redystum.andala.data.Pousada
@@ -45,10 +46,21 @@ fun ExploreScreen(
     val pousadas = Pousadas.listaPousadas
     val highlightPousada = remember { mutableStateListOf<Pousada>() }
     val selectedPousada = remember { mutableStateListOf<Pousada>() }
+    val showingPousada = remember { mutableStateListOf<Pousada>() }.apply {
+        addAll(pousadas)
+    }
 
-    Column(
-        modifier = Modifier.padding(innerPadding).fillMaxSize()
+    Box(
+        modifier = Modifier.fillMaxSize()
     ) {
+        PousadaMapScreen(
+            pousadas = pousadas,
+            pousadasScaffold = showingPousada,
+            highlightPousadas = highlightPousada,
+            selectedPousadas = selectedPousada,
+            onNavigateToPlan = onNavigateToPlan,
+        )
+
         ExploreNavBar(
             onSearchQueryChanged = { query ->
                 val filteredPousadas = pousadas.filter { pousada ->
@@ -56,13 +68,15 @@ fun ExploreScreen(
                 }
                 highlightPousada.clear()
                 highlightPousada.addAll(filteredPousadas)
+                showingPousada.clear()
+                showingPousada.addAll(filteredPousadas)
             },
-            logoPainter = painterResource(id = R.drawable.ic_launcher_foreground)
+            logoPainter = painterResource(id = R.drawable.anda_logo),
+            modifier = Modifier
+                .padding(innerPadding)
+                .align(Alignment.TopCenter)
+                .zIndex(1f)
         )
-
-        Box(modifier = Modifier.weight(1f)) {
-            PousadaMapScreen(pousadas, highlightPousada, selectedPousada, onNavigateToPlan)
-        }
     }
 }
 

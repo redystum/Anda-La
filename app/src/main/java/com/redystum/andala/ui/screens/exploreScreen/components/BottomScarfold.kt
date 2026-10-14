@@ -36,6 +36,7 @@ import com.redystum.andala.ui.theme.AndaLaTheme
 @Composable
 fun PousadaMapScreen(
     pousadas: List<Pousada>,
+    pousadasScaffold: List<Pousada>,
     highlightPousadas: MutableList<Pousada>,
     selectedPousadas: MutableList<Pousada>,
     onNavigateToPlan: () -> Unit
@@ -60,9 +61,7 @@ fun PousadaMapScreen(
                     .fillMaxWidth()
                     .fillMaxHeight(0.85f)
                     .padding(20.dp),
-                verticalArrangement = Arrangement.SpaceBetween
             ) {
-
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -81,46 +80,52 @@ fun PousadaMapScreen(
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
-
-                LazyColumn(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f, fill = false),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                        .fillMaxHeight(),
+                    verticalArrangement = Arrangement.SpaceBetween
                 ) {
-                    items(pousadas, key = { it.id }) { pousada ->
-                        PousadaCard(
-                            pousada = pousada,
-                            onSelectToggle = {
-                                if (selectedPousadas.contains(pousada)) {
-                                    selectedPousadas.remove(pousada)
-                                } else {
-                                    if (selectedPousadas.size < 3) {
-                                        selectedPousadas.add(pousada)
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f, fill = false),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(pousadasScaffold, key = { it.id }) { pousada ->
+                            PousadaCard(
+                                pousada = pousada,
+                                onSelectToggle = {
+                                    if (selectedPousadas.contains(pousada)) {
+                                        selectedPousadas.remove(pousada)
+                                    } else {
+                                        if (selectedPousadas.size < 3) {
+                                            selectedPousadas.add(pousada)
+                                        }
                                     }
+                                },
+                                isSelected = selectedPousadas.contains(pousada),
+                                onClickToggle = {
+                                    highlightPousadas.removeAll(highlightPousadas)
+                                    highlightPousadas.add(pousada)
                                 }
-                            },
-                            isSelected = selectedPousadas.contains(pousada),
-                            onClickToggle = {
-                                highlightPousadas.removeAll(highlightPousadas)
-                                highlightPousadas.add(pousada)
-                            }
+                            )
+                        }
+                    }
+
+                    Button(
+                        onClick = { onNavigateToPlan() },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Planear Viagem")
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowRightAlt,
+                            contentDescription = "Arrow Forward",
+                            modifier = Modifier.padding(start = 8.dp)
                         )
                     }
-                }
 
-                Button(
-                    onClick = { onNavigateToPlan() },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Planear Viagem")
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowRightAlt,
-                        contentDescription = "Arrow Forward",
-                        modifier = Modifier.padding(start = 8.dp)
-                    )
                 }
-
             }
         },
     ) { innerPadding ->
@@ -129,7 +134,6 @@ fun PousadaMapScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // todo uncomment
             MapComponent(screen = 0, pousadas, highlightPousadas, selectedPousadas)
         }
     }
@@ -142,8 +146,11 @@ fun PousadaMapScreen(
 @Composable
 fun ScaffoldPreview() {
     val pousadas = Pousadas.listaPousadas
+    val a = mutableListOf<Pousada>()
+    val b = mutableListOf<Pousada>()
+    val c = mutableListOf<Pousada>()
 
     AndaLaTheme {
-        PousadaMapScreen(pousadas, mutableListOf(), mutableListOf()) {}
+        PousadaMapScreen(pousadas, a, b, c, {})
     }
 }

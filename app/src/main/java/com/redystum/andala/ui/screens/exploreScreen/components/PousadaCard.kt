@@ -157,6 +157,6 @@ fun PousadaCardPreview() {
     val pousadas = Pousadas.listaPousadas
 
     AndaLaTheme {
-        PousadaMapScreen(pousadas, mutableListOf(), mutableListOf()){}
+        PousadaMapScreen(pousadas, mutableListOf(), mutableListOf(), mutableListOf(), {})
     }
 }
