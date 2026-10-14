@@ -10,13 +10,15 @@ import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
+import org.osmdroid.views.overlay.infowindow.InfoWindow
 
 @Composable
 fun MapComponent(
     screen: Int = 0,
     pousadas: List<Pousada> = listOf(),
     highlightPousada: List<Pousada> = listOf(),
-    selectedPousadas: List<Pousada>
+    selectedPousadas: List<Pousada>,
+    onPousadaSelected: (Pousada) -> Unit
 ) {
     AndroidView(
         factory = { ctx ->
@@ -33,25 +35,48 @@ fun MapComponent(
         update = { mapView ->
             mapView.overlays.removeAll { it is Marker }
 
+
             if (screen == 0) {
                 for (p in pousadas) {
                     val coords = GeoPoint(p.coordinates.first, p.coordinates.second)
 
                     var drawable = ContextCompat.getDrawable(mapView.context, R.drawable.hotel)
                     if (highlightPousada.contains(p) && selectedPousadas.contains(p)) {
-                        drawable = ContextCompat.getDrawable(mapView.context, R.drawable.hotel_selected_highlight)
+                        drawable = ContextCompat.getDrawable(
+                            mapView.context,
+                            R.drawable.hotel_selected_highlight
+                        )
                     } else if (selectedPousadas.contains(p)) {
                         drawable = ContextCompat.getDrawable(mapView.context, R.drawable.hotel_selected)
                     } else if (highlightPousada.contains(p)) {
                         drawable = ContextCompat.getDrawable(mapView.context, R.drawable.hotel_highlight)
                     }
 
+                    val customInfoWindow = CustomMarkerInfoWindow(mapView, p) { clickedPousada ->
+                        onPousadaSelected(clickedPousada)
+                    }
                     val marker = Marker(mapView).apply {
                         position = coords
                         title = p.name
                         snippet = p.location
                         icon = drawable
                         setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                        infoWindow = customInfoWindow
+
+                        setOnMarkerClickListener { clickedMarker, map ->
+                            InfoWindow.closeAllInfoWindowsOn(map)
+                            if (clickedMarker.isInfoWindowOpen) {
+                                clickedMarker.closeInfoWindow()
+                            } else {
+                                // some offset fixes because of the custom tooltip
+                                map.controller.animateTo(GeoPoint(
+                                        clickedMarker.position.latitude + 1,
+                                        clickedMarker.position.longitude - 0.13
+                                    ))
+                                clickedMarker.showInfoWindow()
+                            }
+                            true
+                        }
                     }
                     mapView.overlays.add(marker)
                 }

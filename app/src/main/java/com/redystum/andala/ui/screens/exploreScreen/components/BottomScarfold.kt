@@ -129,7 +129,9 @@ fun PousadaMapScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            MapComponent(screen = 0, pousadas, highlightPousadas, selectedPousadas)
+            MapComponent(screen = 0, pousadas, highlightPousadas, selectedPousadas) { pousada ->
+                viewModel.toggleSelection(pousada)
+            }
         }
     }
 
