@@ -52,7 +52,11 @@ fun MapComponent(
                         drawable = ContextCompat.getDrawable(mapView.context, R.drawable.hotel_highlight)
                     }
 
-                    val customInfoWindow = CustomMarkerInfoWindow(mapView, p) { clickedPousada ->
+                    val customInfoWindow = CustomMarkerInfoWindow(
+                        mapView = mapView,
+                        pousada = p,
+                        isPSelected = selectedPousadas.contains(p)
+                    ) { clickedPousada ->
                         onPousadaSelected(clickedPousada)
                     }
                     val marker = Marker(mapView).apply {

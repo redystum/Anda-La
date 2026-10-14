@@ -6,7 +6,7 @@
     android:gravity="center_vertical"
     android:orientation="horizontal"
     android:paddingVertical="0dp"
-    android:paddingHorizontal="26dp">
+    android:paddingHorizontal="20dp">
 
     <LinearLayout
         android:id="@+id/linearLayout"
@@ -16,15 +16,17 @@
         android:elevation="0dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:padding="12dp">
+        android:padding="14dp">
 
         <!-- Left Side: Image from URL placeholder / ImageView -->
-        <ImageView
+        <com.redystum.andala.ui.components.RoundedImageView
             android:id="@+id/info_image"
             android:layout_width="80dp"
             android:layout_height="80dp"
-            android:background="@android:color/darker_gray"
+            android:background="@drawable/bg_popup_image"
+            android:clipToOutline="true"
             android:contentDescription="Pousada Image"
+            android:outlineProvider="background"
             android:scaleType="centerCrop" />
 
         <!-- Right Side: All Text and Controls -->
@@ -47,8 +49,9 @@
                     android:layout_marginTop="2dp"
                     android:ellipsize="end"
                     android:maxLines="2"
-                    android:textColor="@android:color/darker_gray"
-                    android:textSize="18sp" />
+                    android:textColor="@color/popup_on_surface"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
 
                 <ImageView
                     android:id="@+id/btn_close"
@@ -59,7 +62,8 @@
                     android:clickable="true"
                     android:contentDescription="Close"
                     android:focusable="true"
-                    android:src="@android:drawable/ic_menu_close_clear_cancel" />
+                    android:src="@android:drawable/ic_menu_close_clear_cancel"
+                    android:tint="@color/anda_pink" />
             </RelativeLayout>
 
             <!-- Snippet / Location -->
@@ -70,7 +74,7 @@
                 android:layout_marginTop="2dp"
                 android:ellipsize="end"
                 android:maxLines="2"
-                android:textColor="@android:color/darker_gray"
+                android:textColor="@color/popup_on_surface_variant"
                 android:textSize="12sp" />
 
             <!-- Action Button -->
@@ -79,10 +83,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="32dp"
                 android:layout_marginTop="8dp"
+                android:background="@drawable/bg_popup_button_unselected"
+                android:backgroundTint="@null"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
                 android:text="Selecionar"
-                android:textSize="11sp" />
+                android:textColor="@color/anda_pink"
+                android:textSize="11sp"
+                android:textAllCaps="false" />
         </LinearLayout>
 
     </LinearLayout>
@@ -99,5 +107,3 @@
         android:contentDescription="Arrow pointer"
         android:src="@drawable/ic_popup_arrow" />
 </RelativeLayout>
-
-

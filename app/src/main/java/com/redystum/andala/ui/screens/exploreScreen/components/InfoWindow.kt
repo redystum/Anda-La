@@ -17,6 +17,7 @@ import coil3.request.error
 class CustomMarkerInfoWindow(
     mapView: MapView,
     private val pousada: Pousada,
+    private val isPSelected: Boolean,
     private val onActionClick: (Pousada) -> Unit
 ) : InfoWindow(R.layout.custom_info_window, mapView) {
 
@@ -37,6 +38,21 @@ class CustomMarkerInfoWindow(
 
         titleView?.text = pousada.name
         snippetView?.text = pousada.location
+
+        actionButton?.apply {
+            text = if (isPSelected) "Selecionada" else "Selecionar"
+            backgroundTintList = null
+            setBackgroundResource(
+                if (isPSelected) R.drawable.bg_popup_button
+                else R.drawable.bg_popup_button_unselected
+            )
+            setTextColor(
+                resources.getColor(
+                    if (isPSelected) R.color.white else R.color.anda_pink,
+                    context.theme
+                )
+            )
+        }
 
         imageView?.load(pousada.imageUrl) {
             crossfade(true)
