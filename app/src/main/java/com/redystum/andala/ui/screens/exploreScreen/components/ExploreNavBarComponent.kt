@@ -10,7 +10,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonColors
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,25 +24,31 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
 fun ExploreNavBar(
-    onSearchQueryChanged: (String) -> Unit,
+    onSearchQueryChanged: (String, Boolean) -> Unit,
     logoPainter: Painter,
     modifier: Modifier = Modifier
 ) {
     var searchQuery by remember { mutableStateOf("") }
+    val focusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
 
     BasicTextField(
         value = searchQuery,
         onValueChange = {
             searchQuery = it
-            onSearchQueryChanged(it)
+            onSearchQueryChanged(it, true)
         },
         singleLine = true,
         textStyle = TextStyle(
@@ -55,7 +65,8 @@ fun ExploreNavBar(
                         color = MaterialTheme.colorScheme.surfaceVariant,
                         shape = RoundedCornerShape(50.dp)
                     )
-                    .padding(horizontal = 14.dp),
+                    .padding(horizontal = 14.dp)
+                    .focusRequester(focusRequester),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
@@ -82,6 +93,31 @@ fun ExploreNavBar(
                     }
                     innerTextField()
                 }
+
+                IconButton(
+                    enabled = searchQuery.isNotEmpty(),
+                    onClick = {
+                        searchQuery = ""
+                        onSearchQueryChanged("", false)
+                        focusManager.clearFocus()
+                        focusRequester.freeFocus()
+                    },
+                    modifier = Modifier.focusRequester(focusRequester).size(36.dp),
+                    shape = RoundedCornerShape(50),
+                    colors = IconButtonColors(
+                        containerColor = Color.Transparent,
+                        contentColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                        disabledContainerColor = Color.Transparent,
+                        disabledContentColor = Color.Transparent,
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Clear,
+                        contentDescription = "Clear Search",
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
             }
         },
         modifier = modifier.padding(horizontal = 16.dp, vertical = 8.dp)

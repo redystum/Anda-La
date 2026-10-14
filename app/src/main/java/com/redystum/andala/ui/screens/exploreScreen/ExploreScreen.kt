@@ -5,10 +5,15 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.SheetValue
+import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
@@ -24,8 +29,10 @@ import com.redystum.andala.ui.screens.exploreScreen.components.ExploreNavBar
 import com.redystum.andala.ui.screens.exploreScreen.components.PousadaMapScreen
 import com.redystum.andala.ui.theme.AndaLaTheme
 import com.redystum.andala.ui.viewmodel.TripViewModel
+import kotlinx.coroutines.launch
 import org.osmdroid.config.Configuration
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExploreScreen(
     innerPadding: PaddingValues,
@@ -49,6 +56,14 @@ fun ExploreScreen(
         addAll(pousadas)
     }
 
+    val scaffoldState = rememberBottomSheetScaffoldState(
+        bottomSheetState = rememberStandardBottomSheetState(
+            initialValue = SheetValue.PartiallyExpanded
+        )
+    )
+
+    val coroutineScope = rememberCoroutineScope()
+
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -60,17 +75,34 @@ fun ExploreScreen(
             onNavigateToPlan = {
                 onNavigateToPlan()
             },
+            scaffoldState = scaffoldState
         )
 
         ExploreNavBar(
-            onSearchQueryChanged = { query ->
+            onSearchQueryChanged = { query, openBottomSheet ->
+                if (query.isEmpty()) {
+                    showingPousada.clear()
+                    showingPousada.addAll(pousadas)
+                    highlightPousada.clear()
+                    return@ExploreNavBar
+                }
+
                 val filteredPousadas = pousadas.filter { pousada ->
-                    pousada.name.contains(query, ignoreCase = true) || pousada.location.contains(query, ignoreCase = true)
+                    pousada.name.contains(query, ignoreCase = true) || pousada.location.contains(
+                        query,
+                        ignoreCase = true
+                    )
                 }
                 highlightPousada.clear()
                 highlightPousada.addAll(filteredPousadas)
                 showingPousada.clear()
                 showingPousada.addAll(filteredPousadas)
+
+                if (openBottomSheet) {
+                    coroutineScope.launch {
+                        scaffoldState.bottomSheetState.expand()
+                    }
+                }
             },
             logoPainter = painterResource(id = R.drawable.anda_logo),
             modifier = Modifier
@@ -89,6 +121,6 @@ fun ExplorerPreview() {
     val innerPadding = PaddingValues(16.dp)
 
     AndaLaTheme {
-        ExploreScreen(innerPadding, tripViewModel, {},)
+        ExploreScreen(innerPadding, tripViewModel, {})
     }
 }

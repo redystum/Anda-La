@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowRightAlt
 import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.BottomSheetScaffoldState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -40,13 +41,10 @@ fun PousadaMapScreen(
     pousadasScaffold: List<Pousada>,
     highlightPousadas: MutableList<Pousada>,
     onNavigateToPlan: () -> Unit,
-    viewModel: TripViewModel
+    viewModel: TripViewModel,
+    scaffoldState: BottomSheetScaffoldState
 ) {
-    val scaffoldState = rememberBottomSheetScaffoldState(
-        bottomSheetState = rememberStandardBottomSheetState(
-            initialValue = SheetValue.PartiallyExpanded
-        )
-    )
+
 
     val selectedPousadas = viewModel.selectedPousadas
 
@@ -139,6 +137,7 @@ fun PousadaMapScreen(
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Preview(showBackground = true)
 @Composable
 fun ScaffoldPreview(
@@ -147,8 +146,13 @@ fun ScaffoldPreview(
     val pousadas = Pousadas.listaPousadas
     val a = mutableListOf<Pousada>()
     val b = mutableListOf<Pousada>()
+    val scaffoldState = rememberBottomSheetScaffoldState(
+        bottomSheetState = rememberStandardBottomSheetState(
+            initialValue = SheetValue.PartiallyExpanded
+        )
+    )
 
     AndaLaTheme {
-        PousadaMapScreen(pousadas, a, b, {}, viewModel)
+        PousadaMapScreen(pousadas, a, b, {}, viewModel, scaffoldState)
     }
 }

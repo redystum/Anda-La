@@ -19,10 +19,14 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -153,6 +157,7 @@ fun PousadaCard(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Preview(showBackground = true)
 @Composable
 fun PousadaCardPreview(
@@ -161,8 +166,13 @@ fun PousadaCardPreview(
     val pousadas = Pousadas.listaPousadas
     val a = mutableListOf<Pousada>()
     val b = mutableListOf<Pousada>()
+    val scaffoldState = rememberBottomSheetScaffoldState(
+        bottomSheetState = rememberStandardBottomSheetState(
+            initialValue = SheetValue.PartiallyExpanded
+        )
+    )
 
     AndaLaTheme {
-        PousadaMapScreen(pousadas, a, b, {}, viewModel)
+        PousadaMapScreen(pousadas, a, b, {}, viewModel, scaffoldState)
     }
 }
