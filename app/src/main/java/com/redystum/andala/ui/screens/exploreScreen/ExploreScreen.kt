@@ -45,7 +45,6 @@ fun ExploreScreen(
 
     val pousadas = Pousadas.listaPousadas
     val highlightPousada = remember { mutableStateListOf<Pousada>() }
-    val selectedPousada = remember { mutableStateListOf<Pousada>() }
     val showingPousada = remember { mutableStateListOf<Pousada>() }.apply {
         addAll(pousadas)
     }
@@ -54,11 +53,13 @@ fun ExploreScreen(
         modifier = Modifier.fillMaxSize()
     ) {
         PousadaMapScreen(
+            viewModel = viewModel,
             pousadas = pousadas,
             pousadasScaffold = showingPousada,
             highlightPousadas = highlightPousada,
-            selectedPousadas = selectedPousada,
-            onNavigateToPlan = onNavigateToPlan,
+            onNavigateToPlan = {
+                onNavigateToPlan()
+            },
         )
 
         ExploreNavBar(

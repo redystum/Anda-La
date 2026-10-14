@@ -36,6 +36,7 @@ import coil3.compose.AsyncImage
 import com.redystum.andala.data.Pousada
 import com.redystum.andala.data.Pousadas
 import com.redystum.andala.ui.theme.AndaLaTheme
+import com.redystum.andala.ui.viewmodel.TripViewModel
 
 @Composable
 fun PousadaCard(
@@ -46,7 +47,8 @@ fun PousadaCard(
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier
+            .fillMaxWidth()
             .clickable(onClick = { onClickToggle(pousada) }),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
@@ -153,10 +155,14 @@ fun PousadaCard(
 
 @Preview(showBackground = true)
 @Composable
-fun PousadaCardPreview() {
+fun PousadaCardPreview(
+    viewModel: TripViewModel = TripViewModel()
+) {
     val pousadas = Pousadas.listaPousadas
+    val a = mutableListOf<Pousada>()
+    val b = mutableListOf<Pousada>()
 
     AndaLaTheme {
-        PousadaMapScreen(pousadas, mutableListOf(), mutableListOf(), mutableListOf(), {})
+        PousadaMapScreen(pousadas, a, b, {}, viewModel)
     }
 }

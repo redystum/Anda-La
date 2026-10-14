@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import com.redystum.andala.data.Pousada
 import com.redystum.andala.data.Pousadas
 import com.redystum.andala.ui.theme.AndaLaTheme
+import com.redystum.andala.ui.viewmodel.TripViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,14 +39,16 @@ fun PousadaMapScreen(
     pousadas: List<Pousada>,
     pousadasScaffold: List<Pousada>,
     highlightPousadas: MutableList<Pousada>,
-    selectedPousadas: MutableList<Pousada>,
-    onNavigateToPlan: () -> Unit
+    onNavigateToPlan: () -> Unit,
+    viewModel: TripViewModel
 ) {
     val scaffoldState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberStandardBottomSheetState(
             initialValue = SheetValue.PartiallyExpanded
         )
     )
+
+    val selectedPousadas = viewModel.selectedPousadas
 
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
@@ -73,8 +76,8 @@ fun PousadaMapScreen(
                     )
 
                     Text(
-                        text = "${selectedPousadas.size}/3",
-                        style = MaterialTheme.typography.titleMedium,
+                        text = "${selectedPousadas.size} de 3",
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.primary,
                     )
                 }
@@ -96,13 +99,7 @@ fun PousadaMapScreen(
                             PousadaCard(
                                 pousada = pousada,
                                 onSelectToggle = {
-                                    if (selectedPousadas.contains(pousada)) {
-                                        selectedPousadas.remove(pousada)
-                                    } else {
-                                        if (selectedPousadas.size < 3) {
-                                            selectedPousadas.add(pousada)
-                                        }
-                                    }
+                                    viewModel.toggleSelection(pousada)
                                 },
                                 isSelected = selectedPousadas.contains(pousada),
                                 onClickToggle = {
@@ -144,13 +141,14 @@ fun PousadaMapScreen(
 
 @Preview(showBackground = true)
 @Composable
-fun ScaffoldPreview() {
+fun ScaffoldPreview(
+    viewModel: TripViewModel = TripViewModel()
+) {
     val pousadas = Pousadas.listaPousadas
     val a = mutableListOf<Pousada>()
     val b = mutableListOf<Pousada>()
-    val c = mutableListOf<Pousada>()
 
     AndaLaTheme {
-        PousadaMapScreen(pousadas, a, b, c, {})
+        PousadaMapScreen(pousadas, a, b, {}, viewModel)
     }
 }

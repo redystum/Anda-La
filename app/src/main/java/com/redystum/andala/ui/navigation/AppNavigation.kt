@@ -35,6 +35,7 @@ fun AppNavigation(innerPadding: PaddingValues) {
         // Ecra 2
         composable<Screen.PlanTrip> {
             PlanTripScreen(
+                innerPadding = innerPadding,
                 viewModel = tripViewModel,
                 onBack = { navController.popBackStack() },
                 onNavigateToRoute = {

@@ -16,7 +16,7 @@ fun MapComponent(
     screen: Int = 0,
     pousadas: List<Pousada> = listOf(),
     highlightPousada: List<Pousada> = listOf(),
-    selectedPousadas: MutableList<Pousada>
+    selectedPousadas: List<Pousada>
 ) {
     AndroidView(
         factory = { ctx ->
