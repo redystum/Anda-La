@@ -10,6 +10,11 @@ data class Pousada(
     val imageUrl: String? = null
 )
 
+data class PousadaNights(
+    val pousada: Pousada,
+    val nights: Int
+)
+
 object Pousadas {
     // galery link
     // https://pousadasjuventude.e-gds.com/pousadasdajuventude/shoppingcart/hoteldetails.aspx?hotelid=62#tabs-3
