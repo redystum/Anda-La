@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="splash_background">#FF000000</color>
     <color name="popup_surface">#FF1E1E1E</color>
     <color name="popup_on_surface">#FFEDEDED</color>
     <color name="popup_on_surface_variant">#FFC7C7C7</color>

@@ -9,6 +9,7 @@
     <color name="white">#FFFFFFFF</color>
 
     <color name="anda_pink">#FFD80074</color>
+    <color name="splash_background">#FFFFFFFF</color>
     <color name="popup_surface">#FFFFFFFF</color>
     <color name="popup_on_surface">#FF1A1A1A</color>
     <color name="popup_on_surface_variant">#FF4A4A4A</color>
