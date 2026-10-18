@@ -2,6 +2,7 @@ package com.redystum.andala.ui.viewmodel
 
 import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.lifecycle.ViewModel
 import com.redystum.andala.data.Pousada
 import com.redystum.andala.data.PousadaNights
@@ -65,11 +66,26 @@ class TripViewModel : ViewModel() {
         return _pousadaNights.sumOf { it.nights }
     }
 
+    fun reorderPousada(fromIndex: Int, toIndex: Int) {
+        if (fromIndex !in _pousadaNights.indices || toIndex !in _pousadaNights.indices) {
+            return
+        }
+
+        val reordered = _pousadaNights.toMutableList().apply {
+            add(toIndex, removeAt(fromIndex))
+        }
+        Snapshot.withMutableSnapshot {
+            reordered.forEachIndexed { index, stop ->
+                _pousadaNights[index] = stop.copy(order = index)
+            }
+        }
+    }
+
     fun convertPousadaToNights() {
         val nights: Int = maxNights / _selectedPousadas.size
         _pousadaNights.clear()
-        _selectedPousadas.forEach {
-            _pousadaNights.add(PousadaNights(it, nights))
+        _selectedPousadas.forEachIndexed { index, pousada ->
+            _pousadaNights.add(PousadaNights(pousada, nights, index))
         }
     }
 

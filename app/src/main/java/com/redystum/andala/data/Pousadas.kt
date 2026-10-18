@@ -12,7 +12,8 @@ data class Pousada(
 
 data class PousadaNights(
     val pousada: Pousada,
-    val nights: Int
+    val nights: Int,
+    val order: Int? = null
 )
 
 object Pousadas {
