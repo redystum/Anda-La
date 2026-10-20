@@ -1,6 +1,6 @@
 package com.redystum.andala.ui.viewmodel
 
-import android.util.Log
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.lifecycle.ViewModel
@@ -14,6 +14,15 @@ class TripViewModel : ViewModel() {
     private val _selectedPousadas = mutableStateListOf<Pousada>()
 
     val selectedPousadas: List<Pousada> = _selectedPousadas
+
+    // Leiria by default just to save Google api requests
+    private val _selectedLocation = mutableStateOf<String?>("Leiria")
+    val selectedLocation: String?
+        get() = _selectedLocation.value
+
+    fun setSelectedLocation(location: String) {
+        _selectedLocation.value = location
+    }
 
     /**
      * Toggles a pousada selection.
