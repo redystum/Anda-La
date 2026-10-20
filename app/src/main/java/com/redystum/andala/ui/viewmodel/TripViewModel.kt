@@ -9,6 +9,7 @@ import com.redystum.andala.data.PousadaNights
 
 class TripViewModel : ViewModel() {
     val maxNights = 6
+    val minNights = 2
 
     private val _selectedPousadas = mutableStateListOf<Pousada>()
 
@@ -41,6 +42,9 @@ class TripViewModel : ViewModel() {
 
     fun setPousadaNights(pousada: Pousada, nights: Int): Int {
         Log.d("TripViewModel", "Setting nights for ${pousada.name}: $nights")
+        if (nights < minNights) {
+            return minNights
+        }
         if (_pousadaNights.any { it.pousada == pousada }) {
             Log.d("TripViewModel", "Pousada already exists in the list. Updating nights.")
             val index = _pousadaNights.indexOfFirst { it.pousada == pousada }
