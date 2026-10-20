@@ -41,24 +41,23 @@ class TripViewModel : ViewModel() {
     }
 
     fun setPousadaNights(pousada: Pousada, nights: Int): Int {
-        Log.d("TripViewModel", "Setting nights for ${pousada.name}: $nights")
-        if (nights < minNights) {
-            return minNights
-        }
         if (_pousadaNights.any { it.pousada == pousada }) {
-            Log.d("TripViewModel", "Pousada already exists in the list. Updating nights.")
             val index = _pousadaNights.indexOfFirst { it.pousada == pousada }
             val found = _pousadaNights[index]
 
+            if (nights < minNights) {
+                return found.nights
+            }
+
             if (sumWithout(pousada.id) + nights > maxNights) {
-                Log.d("TripViewModel", "Cannot set nights for ${pousada.name}: exceeds max nights")
-                Log.d("TripViewModel", "Current sum without ${pousada.name}: ${sumWithout(pousada.id)}")
                 return found.nights
             }
             _pousadaNights[index] = found.copy(nights = nights)
-            Log.d("TripViewModel", "Nights updated for ${pousada.name}: $nights")
         } else {
-            if (nights > maxNights) {
+            if (getSumNights() + nights > maxNights) {
+                return 0
+            }
+            if (nights < minNights) {
                 return 0
             }
             _pousadaNights.add(PousadaNights(pousada, nights))
