@@ -37,7 +37,6 @@ fun MapComponent(
         },
         update = { mapView ->
 
-            if (screen == 0) {
 
                 if (markerCache.isEmpty()) {
                     for (p in pousadas) {
@@ -46,7 +45,8 @@ fun MapComponent(
                         val customInfoWindow = CustomMarkerInfoWindow(
                             mapView = mapView,
                             pousada = p,
-                            isPSelected = selectedPousadas.contains(p)
+                            isPSelected = selectedPousadas.contains(p),
+                            screen = screen
                         ) { clickedPousada ->
                             onPousadaSelected(clickedPousada)
                         }
@@ -104,7 +104,7 @@ fun MapComponent(
                 }
 
 
-            } else {
+            if (screen == 1) {
                 // Straight line route between points (Polyline)
 //                val routeLine = Polyline().apply {
 //                    setPoints(listOf(porto, coimbra, lisboa))

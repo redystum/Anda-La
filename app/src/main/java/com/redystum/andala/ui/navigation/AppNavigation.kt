@@ -8,8 +8,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.redystum.andala.ui.Screen
 import com.redystum.andala.ui.screens.exploreScreen.ExploreScreen
+import com.redystum.andala.ui.screens.exploreScreen.RouteResultScreen
 import com.redystum.andala.ui.screens.planTripScreen.PlanTripScreen
-import com.redystum.andala.ui.screens.RouteResultScreen
 import com.redystum.andala.ui.viewmodel.TripViewModel
 
 @Composable
@@ -47,6 +47,7 @@ fun AppNavigation(innerPadding: PaddingValues) {
         // Ecra 3
         composable<Screen.RouteResult> {
             RouteResultScreen(
+                innerPadding = innerPadding,
                 viewModel = tripViewModel,
                 onBack = { navController.popBackStack() },
                 onConfirmRoute = {

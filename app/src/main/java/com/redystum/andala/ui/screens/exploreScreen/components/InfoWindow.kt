@@ -7,7 +7,6 @@ import android.widget.ImageView
 import android.widget.TextView
 import coil3.load
 import coil3.request.crossfade
-import coil3.request.placeholder
 import com.redystum.andala.R
 import com.redystum.andala.data.Pousada
 import org.osmdroid.views.MapView
@@ -18,6 +17,7 @@ class CustomMarkerInfoWindow(
     mapView: MapView,
     private val pousada: Pousada,
     private val isPSelected: Boolean,
+    private val screen: Int,
     private val onActionClick: (Pousada) -> Unit
 ) : InfoWindow(R.layout.custom_info_window, mapView) {
 
@@ -38,6 +38,8 @@ class CustomMarkerInfoWindow(
 
         titleView?.text = pousada.name
         snippetView?.text = pousada.location
+
+        actionButton.visibility = if (screen == 0) View.VISIBLE else View.GONE
 
         actionButton?.apply {
             text = if (isPSelected) "Selecionada" else "Selecionar"
