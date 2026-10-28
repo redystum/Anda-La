@@ -63,13 +63,7 @@ fun MapComponent(
                                 if (clickedMarker.isInfoWindowOpen) {
                                     clickedMarker.closeInfoWindow()
                                 } else {
-                                    // some offset fixes because of the custom tooltip
-                                    map.controller.animateTo(
-                                        GeoPoint(
-                                            clickedMarker.position.latitude + 1,
-                                            clickedMarker.position.longitude - 0.13
-                                        )
-                                    )
+                                    map.controller.animateTo(clickedMarker.position)
                                     clickedMarker.showInfoWindow()
                                 }
                                 true
