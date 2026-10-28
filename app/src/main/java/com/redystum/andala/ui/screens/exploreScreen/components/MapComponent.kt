@@ -100,7 +100,7 @@ fun MapComponent(
                         marker.showInfoWindow()
                     }
 
-                    mapView.invalidate()
+                    marker.icon = drawable
                 }
 
 
