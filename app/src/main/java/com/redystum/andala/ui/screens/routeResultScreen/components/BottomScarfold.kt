@@ -6,7 +6,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
@@ -39,8 +40,8 @@ fun ResultMapScreen(
     scaffoldState: BottomSheetScaffoldState,
     onConfirmRoute: () -> Unit,
     routeOptions: List<RouteOption> = emptyList(),
-    selectedRouteIndex: Int? = null,
-    onRouteSelected: (Int) -> Unit = {}
+    selectedRouteByLeg: Map<Int, Int> = emptyMap(),
+    onRouteSelected: (legIndex: Int, optionIndex: Int) -> Unit = { _, _ -> }
 ) {
 
 
@@ -69,34 +70,63 @@ fun ResultMapScreen(
                     style = MaterialTheme.typography.titleMedium
                 )
                 LazyColumn {
-                    itemsIndexed(routeOptions) { index, option ->
-                        Card(
-                            onClick = { onRouteSelected(index) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (index == selectedRouteIndex) {
-                                    MaterialTheme.colorScheme.primaryContainer
-                                } else {
-                                    MaterialTheme.colorScheme.surfaceVariant
-                                }
+                    items(
+                        items = routeOptions.groupBy { it.legIndex }.toList(),
+                        key = { (legIndex, _) -> legIndex }
+                    ) { (legIndex, options) ->
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Text(
+                                text = "Viagem ${legIndex + 1}",
+                                style = MaterialTheme.typography.labelLarge,
+                                modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
                             )
-                        ) {
-                            Column(modifier = Modifier.padding(12.dp)) {
-                                Text(
-                                    text = "Trecho ${option.legIndex + 1} • " +
-                                        "${option.departureTime.substringAfter('T').take(5)}"
+                            LazyRow(
+                                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(
+                                    8.dp
                                 )
-                                Text(
-                                    text = "${option.durationMinutes ?: "—"} min" +
-                                        if (option.transitLines.isEmpty()) {
-                                            ""
-                                        } else {
-                                            " • ${option.transitLines.joinToString()}"
+                            ) {
+                                items(
+                                    items = options,
+                                    key = { option ->
+                                        "${option.legIndex}-${option.departureTime}-${option.route.hashCode()}"
+                                    }
+                                ) { option ->
+                                    val optionIndex = options.indexOf(option)
+                                    Card(
+                                        onClick = {
+                                            onRouteSelected(legIndex, optionIndex)
                                         },
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
+                                        modifier = Modifier
+                                            .fillMaxWidth(0.82f)
+                                            .padding(vertical = 4.dp),
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = if (
+                                                selectedRouteByLeg[legIndex] == optionIndex
+                                            ) {
+                                                MaterialTheme.colorScheme.primaryContainer
+                                            } else {
+                                                MaterialTheme.colorScheme.surfaceVariant
+                                            }
+                                        )
+                                    ) {
+                                        Column(modifier = Modifier.padding(12.dp)) {
+                                            Text(
+                                                text = option.departureTime
+                                                    .substringAfter('T')
+                                                    .take(5)
+                                            )
+                                            Text(
+                                                text = "${option.durationMinutes ?: "—"} min" +
+                                                    if (option.transitLines.isEmpty()) {
+                                                        ""
+                                                    } else {
+                                                        " • ${option.transitLines.joinToString()}"
+                                                    },
+                                                style = MaterialTheme.typography.bodyMedium
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -116,9 +146,16 @@ fun ResultMapScreen(
                 selectedPousadas = selectedPousadas,
                 onPousadaSelected = { pousada -> viewModel.toggleSelection(pousada) },
                 routePath = routeOptions
-                    .getOrNull(selectedRouteIndex ?: -1)
-                    ?.path
-                    .orEmpty()
+                    .groupBy { it.legIndex }
+                    .toSortedMap()
+                    .values
+                    .mapNotNull { options ->
+                        val selectedIndex = selectedRouteByLeg[options.first().legIndex]
+                        options.getOrNull(selectedIndex ?: 0)?.path
+                    }
+                    .flatMapIndexed { index, path ->
+                        if (index == 0) path else path.drop(1)
+                    }
             )
         }
     }

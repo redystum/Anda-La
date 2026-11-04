@@ -47,7 +47,7 @@ fun RouteResultScreen(
     val pousadas = viewModel.selectedPousadas
     val highlightPousada = remember { mutableStateListOf<Pousada>() }
     var routeOptions by remember { mutableStateOf<List<RouteOption>>(emptyList()) }
-    var selectedRouteIndex by remember { mutableStateOf<Int?>(null) }
+    var selectedRouteByLeg by remember { mutableStateOf<Map<Int, Int>>(emptyMap()) }
 
     LaunchedEffect(pousadas, viewModel.selectedLocationCoordinates) {
         val origin = viewModel.selectedLocationCoordinates ?: return@LaunchedEffect
@@ -62,7 +62,9 @@ fun RouteResultScreen(
         }
 
         routeOptions = RoutesService().getRoutesForTrip(stops)
-        selectedRouteIndex = routeOptions.indices.firstOrNull()
+        selectedRouteByLeg = routeOptions
+            .groupBy { it.legIndex }
+            .mapValues { (_, options) -> options.indices.first() }
     }
 
     Box(
@@ -75,8 +77,10 @@ fun RouteResultScreen(
             scaffoldState = scaffoldState,
             onConfirmRoute = onConfirmRoute,
             routeOptions = routeOptions,
-            selectedRouteIndex = selectedRouteIndex,
-            onRouteSelected = { selectedRouteIndex = it }
+            selectedRouteByLeg = selectedRouteByLeg,
+            onRouteSelected = { legIndex, optionIndex ->
+                selectedRouteByLeg = selectedRouteByLeg + (legIndex to optionIndex)
+            }
         )
 
     }
