@@ -1,5 +1,6 @@
 package com.redystum.andala.ui.screens.planTripScreen.components
 
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -21,21 +22,28 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.AutocompleteSessionToken
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.api.net.FetchPlaceRequest
+import com.google.android.libraries.places.api.net.PlacesClient
 import com.google.android.libraries.places.widget.PlaceAutocomplete
 import com.google.android.libraries.places.widget.PlaceAutocompleteActivity
 
 @Composable
 fun LocationAutocompleteInput(
     selectedLocation: String?,
-    onLocationSelected: (String) -> Unit = {}
+    onLocationSelected: (String, LatLng) -> Unit = { _, _ -> }
 ) {
     val context = LocalContext.current
+    val placesClient: PlacesClient = remember { Places.createClient(context) }
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -45,7 +53,26 @@ fun LocationAutocompleteInput(
             val prediction = PlaceAutocomplete.getPredictionFromIntent(intent)
             prediction?.let {
                 val location = it.getFullText(null).toString()
-                onLocationSelected(location)
+                val request = FetchPlaceRequest.newInstance(
+                    it.placeId,
+                    listOf(Place.Field.LOCATION)
+                )
+                placesClient.fetchPlace(request)
+                    .addOnSuccessListener { response ->
+                        response.place.location?.let { coordinates ->
+                            onLocationSelected(location, coordinates)
+                        } ?: Log.e(
+                            "LocationAutocompleteInput",
+                            "Selected place has no coordinates: ${it.placeId}"
+                        )
+                    }
+                    .addOnFailureListener { exception ->
+                        Log.e(
+                            "LocationAutocompleteInput",
+                            "Unable to fetch coordinates for place: ${it.placeId}",
+                            exception
+                        )
+                    }
             }
         }
     }

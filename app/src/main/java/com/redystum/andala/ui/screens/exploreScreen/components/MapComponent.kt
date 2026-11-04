@@ -6,11 +6,15 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.redystum.andala.R
 import com.redystum.andala.data.Pousada
+import com.redystum.andala.data.remote.LatLngDto
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
+import org.osmdroid.views.overlay.Polyline
 import org.osmdroid.views.overlay.infowindow.InfoWindow
 
 @Composable
@@ -19,6 +23,7 @@ fun MapComponent(
     pousadas: List<Pousada> = listOf(),
     highlightPousada: List<Pousada> = listOf(),
     selectedPousadas: List<Pousada>,
+    routePath: List<LatLngDto> = emptyList(),
     onPousadaSelected: (Pousada) -> Unit
 ) {
     val markerCache = remember { mutableMapOf<Pousada, Marker>() }
@@ -98,14 +103,15 @@ fun MapComponent(
                 }
 
 
-            if (screen == 1) {
-                // Straight line route between points (Polyline)
-//                val routeLine = Polyline().apply {
-//                    setPoints(listOf(porto, coimbra, lisboa))
-//                    outlinePaint.color = AndaPink.toArgb() // Matches your theme
-//                    outlinePaint.strokeWidth = 8f
-//                }
-//                overlays.add(routeLine)
+            mapView.overlays.removeAll { it is Polyline }
+            if (routePath.size > 1) {
+                mapView.overlays.add(
+                    Polyline(mapView).apply {
+                        setPoints(routePath.map { GeoPoint(it.latitude, it.longitude) })
+                        outlinePaint.color = Color(0xFF6750A4).toArgb()
+                        outlinePaint.strokeWidth = 8f
+                    }
+                )
             }
 
             mapView.invalidate()

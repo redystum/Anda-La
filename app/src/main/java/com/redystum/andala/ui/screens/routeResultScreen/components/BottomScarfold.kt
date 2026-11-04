@@ -1,8 +1,15 @@
 package com.redystum.andala.ui.screens.routeResultScreen.components
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Text
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.BottomSheetScaffoldState
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -16,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.redystum.andala.data.remote.RouteOption
 import com.redystum.andala.data.Pousada
 import com.redystum.andala.data.Pousadas
 import com.redystum.andala.ui.screens.exploreScreen.components.MapComponent
@@ -29,7 +37,10 @@ fun ResultMapScreen(
     highlightPousadas: MutableList<Pousada>,
     viewModel: TripViewModel,
     scaffoldState: BottomSheetScaffoldState,
-    onConfirmRoute: () -> Unit
+    onConfirmRoute: () -> Unit,
+    routeOptions: List<RouteOption> = emptyList(),
+    selectedRouteIndex: Int? = null,
+    onRouteSelected: (Int) -> Unit = {}
 ) {
 
 
@@ -44,7 +55,53 @@ fun ResultMapScreen(
         sheetShape = MaterialTheme.shapes.large,
         sheetPeekHeight = 360.dp,
         sheetContent = {
-
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                Text(
+                    text = if (routeOptions.isEmpty()) {
+                        "A procurar rotas..."
+                    } else {
+                        "Rotas disponíveis"
+                    },
+                    style = MaterialTheme.typography.titleMedium
+                )
+                LazyColumn {
+                    itemsIndexed(routeOptions) { index, option ->
+                        Card(
+                            onClick = { onRouteSelected(index) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (index == selectedRouteIndex) {
+                                    MaterialTheme.colorScheme.primaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceVariant
+                                }
+                            )
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text(
+                                    text = "Trecho ${option.legIndex + 1} • " +
+                                        "${option.departureTime.substringAfter('T').take(5)}"
+                                )
+                                Text(
+                                    text = "${option.durationMinutes ?: "—"} min" +
+                                        if (option.transitLines.isEmpty()) {
+                                            ""
+                                        } else {
+                                            " • ${option.transitLines.joinToString()}"
+                                        },
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         },
     ) { innerPadding ->
         Box(
@@ -52,9 +109,17 @@ fun ResultMapScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            MapComponent(screen = 1, pousadas, highlightPousadas, selectedPousadas) { pousada ->
-                viewModel.toggleSelection(pousada)
-            }
+            MapComponent(
+                screen = 1,
+                pousadas = pousadas,
+                highlightPousada = highlightPousadas,
+                selectedPousadas = selectedPousadas,
+                onPousadaSelected = { pousada -> viewModel.toggleSelection(pousada) },
+                routePath = routeOptions
+                    .getOrNull(selectedRouteIndex ?: -1)
+                    ?.path
+                    .orEmpty()
+            )
         }
     }
 

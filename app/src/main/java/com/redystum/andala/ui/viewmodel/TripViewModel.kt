@@ -1,9 +1,11 @@
 package com.redystum.andala.ui.viewmodel
 
+import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.lifecycle.ViewModel
+import com.google.android.gms.maps.model.LatLng
 import com.redystum.andala.data.Pousada
 import com.redystum.andala.data.PousadaNights
 
@@ -20,8 +22,15 @@ class TripViewModel : ViewModel() {
     val selectedLocation: String?
         get() = _selectedLocation.value
 
-    fun setSelectedLocation(location: String) {
+    private val _selectedLocationCoordinates = mutableStateOf<LatLng?>(LatLng(39.74953310000001, -8.807682999999999))
+    val selectedLocationCoordinates: LatLng?
+        get() = _selectedLocationCoordinates.value
+
+    fun setSelectedLocation(location: String, coordinates: LatLng) {
         _selectedLocation.value = location
+        _selectedLocationCoordinates.value = coordinates
+        Log.d("TripViewModel", "Selected location: $location")
+        Log.d("TripViewModel", "Selected coordinates: $coordinates")
     }
 
     /**
