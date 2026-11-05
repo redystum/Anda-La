@@ -8,6 +8,22 @@ val AndaPinkDark = Color(0xFFB0005D)
 val AndaPinkContainerLight = Color(0xFFFFD8E4)
 val AndaPinkContainerDark = Color(0xFF5C0030)
 
+/**
+ * Colours used to identify each trip (leg) on the map and in the result list.
+ * Keep this list long enough for the maximum number of trips (3 pousadas + return = 4).
+ */
+val TripRouteColors = listOf(
+    Color(0xFFD80074), // pink
+    Color(0xFF1565C0), // blue
+    Color(0xFF2E7D32), // green
+    Color(0xFFE65100), // orange
+    Color(0xFF6A1B9A), // purple
+    Color(0xFF00838F)  // teal
+)
+
+fun tripRouteColor(legIndex: Int): Color =
+    TripRouteColors[legIndex % TripRouteColors.size]
+
 // Neutros Puros - Light Theme
 val BackgroundLight = Color(0xFFF9F9F9)
 val SurfaceLight = Color(0xFFFFFFFF)

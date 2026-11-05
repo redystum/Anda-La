@@ -8,6 +8,7 @@ import androidx.core.content.ContextCompat
 import com.redystum.andala.R
 import com.redystum.andala.data.Pousada
 import com.redystum.andala.data.remote.LatLngDto
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.BoundingBox
@@ -26,11 +27,12 @@ fun MapComponent(
     selectedPousadas: List<Pousada>,
     routePath: List<LatLngDto> = emptyList(),
     routePaths: List<List<LatLngDto>> = emptyList(),
+    routeColors: List<Color> = emptyList(),
     onPousadaSelected: (Pousada) -> Unit
 ) {
     val markerCache = remember { mutableMapOf<Pousada, Marker>() }
     val lastFittedPaths = remember { arrayOfNulls<List<List<LatLngDto>>>(1) }
-    val routeColor = MaterialTheme.colorScheme.primary.toArgb()
+    val defaultRouteColor = MaterialTheme.colorScheme.primary.toArgb()
 
     AndroidView(
         factory = { ctx ->
@@ -110,23 +112,26 @@ fun MapComponent(
             mapView.overlays.removeAll { it is Polyline }
             // Draw each trip as its own line so all selected legs stay visible.
             val paths = routePaths.ifEmpty { listOf(routePath) }
-                .filter { it.size > 1 }
-            paths.forEach { path ->
-                mapView.overlays.add(
-                    Polyline(mapView).apply {
-                        setPoints(path.map { GeoPoint(it.latitude, it.longitude) })
-                        outlinePaint.color = routeColor
-                        outlinePaint.strokeWidth = 9f
-                        outlinePaint.strokeCap = android.graphics.Paint.Cap.ROUND
-                        outlinePaint.strokeJoin = android.graphics.Paint.Join.ROUND
-                    }
-                )
+            paths.forEachIndexed { index, path ->
+                if (path.size > 1) {
+                    mapView.overlays.add(
+                        Polyline(mapView).apply {
+                            setPoints(path.map { GeoPoint(it.latitude, it.longitude) })
+                            outlinePaint.color = routeColors.getOrNull(index)?.toArgb()
+                                ?: defaultRouteColor
+                            outlinePaint.strokeWidth = 9f
+                            outlinePaint.strokeCap = android.graphics.Paint.Cap.ROUND
+                            outlinePaint.strokeJoin = android.graphics.Paint.Join.ROUND
+                        }
+                    )
+                }
             }
 
             // Keep every selected trip in view, and refit only when a route changes.
-            if (paths.isNotEmpty() && lastFittedPaths[0] != paths) {
-                lastFittedPaths[0] = paths
-                val points = paths.flatten()
+            val visiblePaths = paths.filter { it.size > 1 }
+            if (visiblePaths.isNotEmpty() && lastFittedPaths[0] != visiblePaths) {
+                lastFittedPaths[0] = visiblePaths
+                val points = visiblePaths.flatten()
                 mapView.zoomToBoundingBox(
                     BoundingBox(
                         points.maxOf { it.latitude },

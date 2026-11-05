@@ -1,17 +1,40 @@
 package com.redystum.andala.ui.viewmodel
 
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.google.android.gms.maps.model.LatLng
 import com.redystum.andala.data.Pousada
 import com.redystum.andala.data.PousadaNights
+import com.redystum.andala.data.remote.LatLngDto
+import com.redystum.andala.data.remote.RouteOption
+import com.redystum.andala.data.remote.RoutesService
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 class TripViewModel : ViewModel() {
     val maxNights = 6
     val minNights = 2
+
+    private val routesService = RoutesService()
+    private var routesJob: Job? = null
+    private var routesKey: String? = null
+
+    var routeOptions by mutableStateOf<List<RouteOption>>(emptyList())
+        private set
+
+    var selectedRouteByLeg by mutableStateOf<Map<Int, Int>>(emptyMap())
+        private set
+
+    var isLoadingRoutes by mutableStateOf(false)
+        private set
 
     private val _selectedPousadas = mutableStateListOf<Pousada>()
 
@@ -110,4 +133,64 @@ class TripViewModel : ViewModel() {
         }
     }
 
+    /**
+     * Loads the route options once per trip configuration. Keeping this in the
+     * ViewModel means a configuration change (e.g. screen rotation) reuses the
+     * already loaded routes instead of requesting them from the API again.
+     */
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun loadRoutes(origin: LatLng?, pousadas: List<Pousada>) {
+        if (origin == null || pousadas.isEmpty()) return
+
+        val key = buildString {
+            append(origin.latitude).append(',').append(origin.longitude)
+            pousadas.forEach { pousada ->
+                append('|').append(pousada.id).append(':')
+                    .append(pousada.coordinates.first).append(',')
+                    .append(pousada.coordinates.second)
+            }
+        }
+        if (key == routesKey) return
+
+        routesKey = key
+        routesJob?.cancel()
+        routesJob = viewModelScope.launch {
+            isLoadingRoutes = true
+            routeOptions = emptyList()
+            selectedRouteByLeg = emptyMap()
+
+            try {
+                val stops = buildList {
+                    add(LatLngDto(origin.latitude, origin.longitude))
+                    pousadas.forEach { pousada ->
+                        add(
+                            LatLngDto(
+                                pousada.coordinates.first,
+                                pousada.coordinates.second
+                            )
+                        )
+                    }
+                    add(LatLngDto(origin.latitude, origin.longitude))
+                }
+
+                val routes = routesService.getRoutesForTrip(stops)
+                routeOptions = routes
+                selectedRouteByLeg = routes
+                    .groupBy { it.legIndex }
+                    .mapValues { (_, options) -> options.indices.first() }
+            } catch (exception: Exception) {
+                Log.e("TripViewModel", "Unable to load routes", exception)
+            } finally {
+                if (routesKey == key) {
+                    isLoadingRoutes = false
+                    // Allow a retry if nothing could be loaded.
+                    if (routeOptions.isEmpty()) routesKey = null
+                }
+            }
+        }
+    }
+
+    fun selectRoute(legIndex: Int, optionIndex: Int) {
+        selectedRouteByLeg = selectedRouteByLeg + (legIndex to optionIndex)
+    }
 }

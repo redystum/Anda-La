@@ -70,8 +70,42 @@ class RoutesService(
             }
         }
 
-        Log.d("RoutesService", "Finished route loading: ${routes.size} option(s)")
-        return routes
+        // The API is queried for several departure times and may return the same
+        // journey more than once. Keep only the first occurrence of each itinerary,
+        // ignoring duration and departure time.
+        val uniqueRoutes = routes
+            .groupBy { it.legIndex }
+            .toSortedMap()
+            .flatMap { (_, legRoutes) -> legRoutes.distinctBy { it.journeySignature() } }
+
+        Log.d(
+            "RoutesService",
+            "Finished route loading: ${routes.size} option(s), " +
+                "${uniqueRoutes.size} unique"
+        )
+        return uniqueRoutes
+    }
+
+    private fun RouteOption.journeySignature(): String {
+        val transitStops = route.legs
+            .flatMap { it.steps }
+            .mapNotNull { it.transitDetails }
+
+        if (transitStops.isEmpty()) {
+            return "walk:" + path.joinToString(";") { "${it.latitude},${it.longitude}" }
+        }
+
+        return transitStops.joinToString("|") { details ->
+            val line = details.transitLine
+            val stops = details.stopDetails
+            listOf(
+                line?.name ?: line?.nameShort ?: "",
+                line?.vehicle?.type ?: "",
+                stops?.departureStop?.name ?: "",
+                stops?.arrivalStop?.name ?: "",
+                details.headsign ?: ""
+            ).joinToString("~")
+        }
     }
 
     private fun routePath(

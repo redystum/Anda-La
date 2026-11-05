@@ -66,8 +66,10 @@ import com.redystum.andala.data.Pousada
 import com.redystum.andala.data.Pousadas
 import com.redystum.andala.data.remote.RouteOption
 import com.redystum.andala.data.remote.TransitDetailsDto
+import com.redystum.andala.data.remote.TransitLineDto
 import com.redystum.andala.ui.screens.exploreScreen.components.MapComponent
 import com.redystum.andala.ui.theme.AndaLaTheme
+import com.redystum.andala.ui.theme.tripRouteColor
 import com.redystum.andala.ui.viewmodel.TripViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -80,7 +82,8 @@ fun ResultMapScreen(
     onConfirmRoute: () -> Unit,
     routeOptions: List<RouteOption> = emptyList(),
     selectedRouteByLeg: Map<Int, Int> = emptyMap(),
-    onRouteSelected: (legIndex: Int, optionIndex: Int) -> Unit = { _, _ -> }
+    onRouteSelected: (legIndex: Int, optionIndex: Int) -> Unit = { _, _ -> },
+    isLoadingRoutes: Boolean = false
 ) {
 
     val selectedPousadas = viewModel.selectedPousadas
@@ -110,10 +113,10 @@ fun ResultMapScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = if (routeOptions.isEmpty()) {
-                            "A procurar rotas..."
-                        } else {
-                            "Escolha as suas rotas"
+                        text = when {
+                            routeOptions.isNotEmpty() -> "Escolha as suas rotas"
+                            isLoadingRoutes -> "A procurar rotas..."
+                            else -> "Sem rotas disponíveis"
                         },
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
@@ -129,11 +132,14 @@ fun ResultMapScreen(
                     }
                 }
                 Text(
-                    text = if (selectedOptions.isEmpty()) {
-                        "Vamos encontrar as melhores ligações para a sua viagem"
-                    } else {
-                        "Duração total estimada · ${selectedOptions.size} " +
-                            if (selectedOptions.size == 1) "viagem" else "viagens"
+                    text = when {
+                        selectedOptions.isNotEmpty() ->
+                            "Duração total estimada · ${selectedOptions.size} " +
+                                if (selectedOptions.size == 1) "viagem" else "viagens"
+                        isLoadingRoutes ->
+                            "Vamos encontrar as melhores ligações para a sua viagem"
+                        else ->
+                            "Não encontrámos ligações para esta viagem"
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -147,16 +153,25 @@ fun ResultMapScreen(
                             .height(300.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(32.dp),
-                                strokeWidth = 3.dp
-                            )
-                            Spacer(modifier = Modifier.height(12.dp))
+                        if (isLoadingRoutes) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(32.dp),
+                                    strokeWidth = 3.dp
+                                )
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Text(
+                                    text = "A calcular as melhores opções...",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        } else {
                             Text(
-                                text = "A calcular as melhores opções...",
+                                text = "Não foi possível encontrar rotas para esta viagem.",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 24.dp)
                             )
                         }
                     }
@@ -184,6 +199,7 @@ fun ResultMapScreen(
                                 destinationName = destinationName,
                                 options = options,
                                 selectedOptionIndex = selectedRouteByLeg[legIndex] ?: 0,
+                                tripColor = tripRouteColor(legIndex),
                                 onOptionSelected = { optionIndex ->
                                     onRouteSelected(legIndex, optionIndex)
                                 }
@@ -236,7 +252,10 @@ fun ResultMapScreen(
                 routePaths = routesByLeg.map { (legIndex, options) ->
                     val selectedIndex = selectedRouteByLeg[legIndex] ?: 0
                     options.getOrNull(selectedIndex)?.path.orEmpty()
-                }.filter { it.size > 1 }
+                },
+                routeColors = routesByLeg.keys.map { legIndex ->
+                    tripRouteColor(legIndex)
+                }
             )
         }
     }
@@ -250,6 +269,7 @@ private fun TripSection(
     destinationName: String,
     options: List<RouteOption>,
     selectedOptionIndex: Int,
+    tripColor: Color,
     onOptionSelected: (Int) -> Unit
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -263,7 +283,7 @@ private fun TripSection(
                 modifier = Modifier
                     .size(30.dp)
                     .background(
-                        color = MaterialTheme.colorScheme.primaryContainer,
+                        color = tripColor.copy(alpha = 0.15f),
                         shape = CircleShape
                     ),
                 contentAlignment = Alignment.Center
@@ -272,7 +292,7 @@ private fun TripSection(
                     text = "${legIndex + 1}",
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                    color = tripColor
                 )
             }
             Column(
@@ -297,7 +317,7 @@ private fun TripSection(
                 Text(
                     text = "${options.size} opções",
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary
+                    color = tripColor
                 )
             }
         }
@@ -314,6 +334,7 @@ private fun TripSection(
                 RouteOptionCard(
                     option = option,
                     isSelected = selectedOptionIndex == optionIndex,
+                    tripColor = tripColor,
                     originName = originName,
                     destinationName = destinationName,
                     onClick = { onOptionSelected(optionIndex) },
@@ -328,6 +349,7 @@ private fun TripSection(
 private fun RouteOptionCard(
     option: RouteOption,
     isSelected: Boolean,
+    tripColor: Color,
     originName: String,
     destinationName: String,
     onClick: () -> Unit,
@@ -343,6 +365,7 @@ private fun RouteOptionCard(
         ?: option.transitLines.firstOrNull()
         ?: "Ligação"
     val vehicleIcon = vehicleIcon(transitDetails)
+    val transportLabel = transportTypeLabel(transitDetails)
     val stopNames = transitDetails
         .flatMap { details ->
             listOfNotNull(
@@ -377,7 +400,7 @@ private fun RouteOptionCard(
         border = BorderStroke(
             width = if (isSelected) 2.dp else 1.dp,
             color = if (isSelected) {
-                MaterialTheme.colorScheme.primary
+                tripColor
             } else {
                 MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
             }
@@ -398,7 +421,7 @@ private fun RouteOptionCard(
                     modifier = Modifier
                         .size(44.dp)
                         .background(
-                            color = MaterialTheme.colorScheme.primary,
+                            color = tripColor,
                             shape = CircleShape
                         ),
                     contentAlignment = Alignment.Center
@@ -406,7 +429,7 @@ private fun RouteOptionCard(
                     Icon(
                         imageVector = vehicleIcon,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimary,
+                        tint = Color.White,
                         modifier = Modifier.size(24.dp)
                     )
                 }
@@ -422,20 +445,39 @@ private fun RouteOptionCard(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                    Text(
-                        text = "Duração: ${formatDuration(option.durationMinutes ?: 0)}  ·  " +
-                            "Partida ${formatTime(option.departureTime)}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f, fill = false)
+                                .background(
+                                    color = tripColor.copy(alpha = 0.14f),
+                                    shape = RoundedCornerShape(6.dp)
+                                )
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = transportLabel,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = tripColor,
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Duração: ${formatDuration(option.durationMinutes ?: 0)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1
+                        )
+                    }
                 }
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                     contentDescription = null,
                     tint = if (isSelected) {
-                        MaterialTheme.colorScheme.primary
+                        tripColor
                     } else {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     },
@@ -450,6 +492,7 @@ private fun RouteOptionCard(
 
             TripTimeline(
                 stops = timelineStops,
+                tripColor = tripColor,
                 detailsExpanded = detailsExpanded,
                 onToggleDetails = { detailsExpanded = !detailsExpanded },
                 detailsText = departureDetails(option, transitDetails)
@@ -480,6 +523,7 @@ private fun RouteOptionCard(
 @Composable
 private fun TripTimeline(
     stops: List<TimelineStopData>,
+    tripColor: Color,
     detailsExpanded: Boolean,
     onToggleDetails: () -> Unit,
     detailsText: String
@@ -487,11 +531,13 @@ private fun TripTimeline(
     stops.forEachIndexed { index, stop ->
         TimelineStopRow(
             stop = stop,
+            tripColor = tripColor,
             isLast = index == stops.lastIndex
         )
 
         if (index == 0) {
             TimelineDetailsRow(
+                tripColor = tripColor,
                 expanded = detailsExpanded,
                 onToggle = onToggleDetails,
                 detailsText = detailsText
@@ -503,6 +549,7 @@ private fun TripTimeline(
 @Composable
 private fun TimelineStopRow(
     stop: TimelineStopData,
+    tripColor: Color,
     isLast: Boolean
 ) {
     Row(
@@ -513,6 +560,7 @@ private fun TimelineStopRow(
         TimelineRail(
             isLast = isLast,
             filled = isLast,
+            color = tripColor,
             modifier = Modifier.fillMaxHeight()
         )
         Column(
@@ -538,6 +586,7 @@ private fun TimelineStopRow(
 
 @Composable
 private fun TimelineDetailsRow(
+    tripColor: Color,
     expanded: Boolean,
     onToggle: () -> Unit,
     detailsText: String
@@ -551,6 +600,7 @@ private fun TimelineDetailsRow(
             isLast = false,
             filled = false,
             showDot = false,
+            color = tripColor,
             modifier = Modifier.fillMaxHeight()
         )
         Column(
@@ -598,10 +648,10 @@ private fun TimelineDetailsRow(
 private fun TimelineRail(
     isLast: Boolean,
     filled: Boolean,
+    color: Color,
     showDot: Boolean = true,
     modifier: Modifier = Modifier
 ) {
-    val primary = MaterialTheme.colorScheme.primary
     Column(
         modifier = modifier.width(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -613,9 +663,9 @@ private fun TimelineRail(
                     .size(14.dp)
                     .then(
                         if (filled) {
-                            Modifier.background(primary, CircleShape)
+                            Modifier.background(color, CircleShape)
                         } else {
-                            Modifier.border(2.dp, primary, CircleShape)
+                            Modifier.border(2.dp, color, CircleShape)
                         }
                     )
             )
@@ -625,7 +675,7 @@ private fun TimelineRail(
                 modifier = Modifier
                     .weight(1f)
                     .width(2.dp)
-                    .background(primary.copy(alpha = 0.35f))
+                    .background(color.copy(alpha = 0.35f))
             )
         }
     }
@@ -667,6 +717,41 @@ private fun vehicleIcon(transitDetails: List<TransitDetailsDto>): ImageVector {
             it.contains("BUS") || it.contains("TROLLEY") || it.contains("COACH")
         } -> Icons.Default.DirectionsBus
         else -> Icons.Default.DirectionsWalk
+    }
+}
+
+private fun transportTypeLabel(transitDetails: List<TransitDetailsDto>): String {
+    if (transitDetails.isEmpty()) return "A pé"
+
+    val labels = transitDetails
+        .mapNotNull { it.transitLine }
+        .map { transportLabel(it) }
+        .distinct()
+
+    return labels.joinToString(" + ").ifBlank { "Transporte" }
+}
+
+private fun transportLabel(line: TransitLineDto): String {
+    val type = line.vehicle?.type?.uppercase().orEmpty()
+    val name = (line.name ?: line.nameShort).orEmpty().lowercase()
+
+    return when {
+        type.contains("RAIL") || type.contains("TRAIN") || name.contains("comboio") ->
+            when {
+                "regional" in name -> "Comboio regional"
+                "intercidades" in name -> "Comboio intercidades"
+                "alfa" in name -> "Comboio Alfa Pendular"
+                "urban" in name -> "Comboio urbano"
+                else -> "Comboio"
+            }
+
+        type.contains("SUBWAY") || type.contains("METRO") -> "Metro"
+        type.contains("TRAM") || type.contains("LIGHT_RAIL") -> "Elétrico"
+        type.contains("FERRY") || type.contains("BOAT") -> "Barco"
+        type.contains("BUS") || type.contains("COACH") || type.contains("TROLLEY") ->
+            "Autocarro"
+        type.contains("WALK") -> "A pé"
+        else -> line.vehicle?.name?.text ?: "Transporte"
     }
 }
 
