@@ -13,6 +13,8 @@ import androidx.lifecycle.viewModelScope
 import com.google.android.gms.maps.model.LatLng
 import com.redystum.andala.data.Pousada
 import com.redystum.andala.data.PousadaNights
+import com.redystum.andala.data.SavedTripInput
+import com.redystum.andala.data.SavedTripStop
 import com.redystum.andala.data.remote.LatLngDto
 import com.redystum.andala.data.remote.RouteOption
 import com.redystum.andala.data.remote.RoutesService
@@ -192,5 +194,62 @@ class TripViewModel : ViewModel() {
 
     fun selectRoute(legIndex: Int, optionIndex: Int) {
         selectedRouteByLeg = selectedRouteByLeg + (legIndex to optionIndex)
+    }
+
+    /** Clears the current planning state so a new trip can be started. */
+    fun resetTrip() {
+        routesJob?.cancel()
+        routesJob = null
+        routesKey = null
+        routeOptions = emptyList()
+        selectedRouteByLeg = emptyMap()
+        isLoadingRoutes = false
+        _pousadaNights.clear()
+        _selectedPousadas.clear()
+        _selectedLocation.value = "Leiria"
+        _selectedLocationCoordinates.value = LatLng(39.74953310000001, -8.807682999999999)
+    }
+
+    /** Pousadas in the order the user arranged them on the plan screen. */
+    fun currentPousadas(): List<Pousada> =
+        pousadaNights.map { it.pousada }.ifEmpty { selectedPousadas }
+
+    /**
+     * Snapshot of the current trip, ready to be persisted with Room.
+     * Returns null when there is nothing meaningful to save.
+     */
+    fun currentTripInput(): SavedTripInput? {
+        val originName = selectedLocation ?: return null
+        val originCoordinates = selectedLocationCoordinates ?: return null
+
+        val stops = pousadaNights
+            .mapIndexed { index, stop ->
+                SavedTripStop(
+                    pousada = stop.pousada,
+                    nights = stop.nights,
+                    order = stop.order ?: index
+                )
+            }
+            .ifEmpty {
+                selectedPousadas.mapIndexed { index, pousada ->
+                    SavedTripStop(pousada = pousada, nights = 0, order = index)
+                }
+            }
+
+        val selectedRoutes = routeOptions
+            .groupBy { it.legIndex }
+            .toSortedMap()
+            .mapNotNull { (legIndex, options) ->
+                options.getOrNull(selectedRouteByLeg[legIndex] ?: 0)
+            }
+
+        if (stops.isEmpty() || selectedRoutes.isEmpty()) return null
+
+        return SavedTripInput(
+            originName = originName,
+            originCoordinates = originCoordinates.latitude to originCoordinates.longitude,
+            stops = stops,
+            routes = selectedRoutes
+        )
     }
 }

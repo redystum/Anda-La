@@ -11,4 +11,10 @@ sealed interface Screen {
 
     @Serializable
     data object RouteResult : Screen
+
+    @Serializable
+    data object SavedTrips : Screen
+
+    @Serializable
+    data class SavedTripDetail(val tripId: Long) : Screen
 }

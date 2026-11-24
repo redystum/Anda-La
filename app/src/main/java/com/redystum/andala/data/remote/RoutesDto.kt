@@ -40,6 +40,7 @@ data class RouteDto(
     val legs: List<LegDto> = emptyList()
 )
 
+@Serializable
 data class RouteOption(
     val route: RouteDto,
     val departureTime: String,

@@ -80,6 +80,7 @@ fun ResultMapScreen(
     viewModel: TripViewModel,
     scaffoldState: BottomSheetScaffoldState,
     onConfirmRoute: () -> Unit,
+    isConfirmingRoute: Boolean = false,
     routeOptions: List<RouteOption> = emptyList(),
     selectedRouteByLeg: Map<Int, Int> = emptyMap(),
     onRouteSelected: (legIndex: Int, optionIndex: Int) -> Unit = { _, _ -> },
@@ -211,7 +212,7 @@ fun ResultMapScreen(
                             Spacer(modifier = Modifier.height(12.dp))
                             Button(
                                 onClick = onConfirmRoute,
-                                enabled = selectedOptions.isNotEmpty(),
+                                enabled = selectedOptions.isNotEmpty() && !isConfirmingRoute,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(56.dp),
@@ -222,17 +223,31 @@ fun ResultMapScreen(
                                 )
                             ) {
                                 Text(
-                                    text = "Confirmar Rota",
+                                    text = if (isConfirmingRoute) {
+                                        "A guardar..."
+                                    } else {
+                                        "Confirmar Rota"
+                                    },
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold
                                 )
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .padding(start = 8.dp)
-                                        .size(20.dp)
-                                )
+                                if (isConfirmingRoute) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier
+                                            .padding(start = 8.dp)
+                                            .size(20.dp),
+                                        strokeWidth = 2.dp,
+                                        color = MaterialTheme.colorScheme.onPrimary
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .padding(start = 8.dp)
+                                            .size(20.dp)
+                                    )
+                                }
                             }
                         }
                     }
@@ -351,13 +366,13 @@ private fun TripSection(
 }
 
 @Composable
-private fun RouteOptionCard(
+internal fun RouteOptionCard(
     option: RouteOption,
     isSelected: Boolean,
     tripColor: Color,
     originName: String,
     destinationName: String,
-    onClick: () -> Unit,
+    onClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     var detailsExpanded by remember(option) { mutableStateOf(false) }
@@ -399,7 +414,7 @@ private fun RouteOptionCard(
     }
 
     Card(
-        onClick = onClick,
+        onClick = { onClick?.invoke() },
         modifier = modifier,
         shape = RoundedCornerShape(20.dp),
         border = BorderStroke(
@@ -478,16 +493,18 @@ private fun RouteOptionCard(
                         )
                     }
                 }
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = null,
-                    tint = if (isSelected) {
-                        tripColor
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                    modifier = Modifier.size(24.dp)
-                )
+                if (onClick != null) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = null,
+                        tint = if (isSelected) {
+                            tripColor
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
 
             HorizontalDivider(
@@ -691,7 +708,7 @@ private data class TimelineStopData(
     val label: String
 )
 
-private fun routeEndpointNames(
+internal fun routeEndpointNames(
     legIndex: Int,
     pousadas: List<Pousada>,
     startLocation: String?
@@ -776,7 +793,7 @@ private fun departureDetails(
 private fun formatTime(dateTime: String): String =
     dateTime.substringAfter('T').take(5).ifBlank { "—" }
 
-private fun formatDuration(minutes: Int): String {
+internal fun formatDuration(minutes: Int): String {
     if (minutes <= 0) return "—"
     val hours = minutes / 60
     val remainingMinutes = minutes % 60
