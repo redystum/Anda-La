@@ -19,7 +19,8 @@ class RoutesService(
             return emptyList()
         }
 
-        val departureTimes = listOf(7, 9, 11, 13).map { hour ->
+        // TODO listOf(7, 9, 11, 13)
+        val departureTimes = listOf(7).map { hour ->
             ZonedDateTime.of(
                 LocalDate.now().plusDays(1),
                 LocalTime.of(hour, 0),

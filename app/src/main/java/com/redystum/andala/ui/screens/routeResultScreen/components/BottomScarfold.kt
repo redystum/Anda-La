@@ -100,11 +100,12 @@ fun ResultMapScreen(
         sheetShadowElevation = 8.dp,
         sheetTonalElevation = 0.dp,
         sheetShape = MaterialTheme.shapes.large,
-        sheetPeekHeight = 500.dp,
+        sheetPeekHeight = 600.dp,
         sheetContent = {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .fillMaxHeight()
                     .padding(horizontal = 16.dp)
                     .padding(bottom = 16.dp)
             ) {
@@ -149,8 +150,7 @@ fun ResultMapScreen(
                 if (routesByLeg.isEmpty()) {
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(300.dp),
+                            .fillMaxWidth(),
                         contentAlignment = Alignment.Center
                     ) {
                         if (isLoadingRoutes) {
@@ -178,8 +178,7 @@ fun ResultMapScreen(
                 } else {
                     LazyColumn(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(max = 320.dp),
+                            .fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         items(
@@ -205,35 +204,41 @@ fun ResultMapScreen(
                                 }
                             )
                         }
+
+                        item(
+                            key = "confirm_route"
+                        ){
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Button(
+                                onClick = onConfirmRoute,
+                                enabled = selectedOptions.isNotEmpty(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(56.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary
+                                )
+                            ) {
+                                Text(
+                                    text = "Confirmar Rota",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .padding(start = 8.dp)
+                                        .size(20.dp)
+                                )
+                            }
+                        }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
-                Button(
-                    onClick = onConfirmRoute,
-                    enabled = selectedOptions.isNotEmpty(),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
-                    )
-                ) {
-                    Text(
-                        text = "Confirmar Rota",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .padding(start = 8.dp)
-                            .size(20.dp)
-                    )
-                }
+
             }
         },
     ) { innerPadding ->
