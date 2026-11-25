@@ -37,7 +37,8 @@ import org.osmdroid.config.Configuration
 fun ExploreScreen(
     innerPadding: PaddingValues,
     viewModel: TripViewModel,
-    onNavigateToPlan: () -> Unit
+    onNavigateToPlan: () -> Unit,
+    onBack: (() -> Unit)? = null
 ) {
 
     val context = LocalContext.current
@@ -105,6 +106,7 @@ fun ExploreScreen(
                 }
             },
             logoPainter = painterResource(id = R.drawable.anda_logo),
+            onBack = onBack,
             modifier = Modifier
                 .padding(innerPadding)
                 .align(Alignment.TopCenter)

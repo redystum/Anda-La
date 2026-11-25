@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -40,7 +41,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.redystum.andala.data.SavedTripDetails
 import com.redystum.andala.data.SavedTripStop
-import com.redystum.andala.ui.components.NavBar
+import com.redystum.andala.ui.components.MapBackButton
 import com.redystum.andala.ui.screens.exploreScreen.components.MapComponent
 import com.redystum.andala.ui.screens.routeResultScreen.components.RouteOptionCard
 import com.redystum.andala.ui.screens.routeResultScreen.components.formatDuration
@@ -80,15 +81,6 @@ fun SavedTripScreen(
 
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
-        topBar = {
-            NavBar(
-                title = "A sua viagem",
-                onBackNavigation = {
-                    onBack()
-                    true
-                }
-            )
-        },
         sheetContainerColor = MaterialTheme.colorScheme.surface,
         sheetContentColor = MaterialTheme.colorScheme.onSurface,
         sheetShadowElevation = 8.dp,
@@ -146,6 +138,13 @@ fun SavedTripScreen(
                 onPousadaSelected = {},
                 routePaths = routes.map { it.path },
                 routeColors = routes.map { tripRouteColor(it.legIndex) }
+            )
+            MapBackButton(
+                onClick = onBack,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .statusBarsPadding()
+                    .padding(8.dp)
             )
         }
     }

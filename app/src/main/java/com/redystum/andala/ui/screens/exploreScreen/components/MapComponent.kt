@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.core.view.doOnLayout
 import com.redystum.andala.R
 import com.redystum.andala.data.Pousada
 import com.redystum.andala.data.remote.LatLngDto
@@ -45,6 +46,9 @@ fun MapComponent(
                 controller.setZoom(7.5)
                 controller.setCenter(GeoPoint(39.5, -8.0))
             }
+        },
+        onRelease = { mapView ->
+            mapView.onDetach()
         },
         update = { mapView ->
 
@@ -130,18 +134,41 @@ fun MapComponent(
             // Keep every selected trip in view, and refit only when a route changes.
             val visiblePaths = paths.filter { it.size > 1 }
             if (visiblePaths.isNotEmpty() && lastFittedPaths[0] != visiblePaths) {
-                lastFittedPaths[0] = visiblePaths
                 val points = visiblePaths.flatten()
-                mapView.zoomToBoundingBox(
-                    BoundingBox(
-                        points.maxOf { it.latitude },
-                        points.maxOf { it.longitude },
-                        points.minOf { it.latitude },
-                        points.minOf { it.longitude }
-                    ),
-                    true,
-                    80
-                )
+                val north = points.maxOf { it.latitude }
+                val south = points.minOf { it.latitude }
+                val east = points.maxOf { it.longitude }
+                val west = points.minOf { it.longitude }
+
+                // zoomToBoundingBox can spin forever when the map has not been
+                // measured yet (width/height are 0) or when the box is a single
+                // point. Wait for a real layout and always pass a box with a
+                // minimum span and a padding that fits the view.
+                mapView.doOnLayout {
+                    if (lastFittedPaths[0] == visiblePaths) return@doOnLayout
+
+                    val width = mapView.width
+                    val height = mapView.height
+                    if (width <= 0 || height <= 0) return@doOnLayout
+
+                    lastFittedPaths[0] = visiblePaths
+                    val centerLat = (north + south) / 2.0
+                    val centerLon = (east + west) / 2.0
+                    val halfLat = ((north - south) / 2.0).coerceAtLeast(0.0005)
+                    val halfLon = ((east - west) / 2.0).coerceAtLeast(0.0005)
+                    val padding = minOf(80, width / 4, height / 4)
+
+                    mapView.zoomToBoundingBox(
+                        BoundingBox(
+                            centerLat + halfLat,
+                            centerLon + halfLon,
+                            centerLat - halfLat,
+                            centerLon - halfLon
+                        ),
+                        true,
+                        padding
+                    )
+                }
             }
 
             mapView.invalidate()

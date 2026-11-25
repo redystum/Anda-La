@@ -68,6 +68,11 @@ fun AppNavigation(innerPadding: PaddingValues) {
                 viewModel = tripViewModel,
                 onNavigateToPlan = {
                     navController.navigate(Screen.PlanTrip)
+                },
+                onBack = if (savedTrips?.isNotEmpty() == true) {
+                    { navController.popBackStack() }
+                } else {
+                    null
                 }
             )
         }
@@ -110,9 +115,8 @@ fun AppNavigation(innerPadding: PaddingValues) {
                 onNewTrip = {
                     tripViewModel.resetTrip()
                     navController.navigate(Screen.Explore) {
-                        popUpTo(navController.graph.startDestinationId) {
-                            inclusive = true
-                        }
+                        popUpTo(Screen.SavedTrips)
+                        launchSingleTop = true
                     }
                 }
             )
@@ -128,9 +132,8 @@ fun AppNavigation(innerPadding: PaddingValues) {
                 onNewTrip = {
                     tripViewModel.resetTrip()
                     navController.navigate(Screen.Explore) {
-                        popUpTo(navController.graph.startDestinationId) {
-                            inclusive = true
-                        }
+                        popUpTo(Screen.SavedTrips)
+                        launchSingleTop = true
                     }
                 }
             )

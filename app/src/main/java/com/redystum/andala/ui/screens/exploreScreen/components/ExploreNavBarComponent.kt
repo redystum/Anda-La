@@ -33,93 +33,107 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.redystum.andala.ui.components.MapBackButton
 
 @Composable
 fun ExploreNavBar(
     onSearchQueryChanged: (String, Boolean) -> Unit,
     logoPainter: Painter,
+    onBack: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     var searchQuery by remember { mutableStateOf("") }
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
 
-    BasicTextField(
-        value = searchQuery,
-        onValueChange = {
-            searchQuery = it
-            onSearchQueryChanged(it, true)
-        },
-        singleLine = true,
-        textStyle = TextStyle(
-            color = MaterialTheme.colorScheme.primary,
-            fontSize = 16.sp
-        ),
-        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-        decorationBox = { innerTextField ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(46.dp)
-                    .background(
-                        color = MaterialTheme.colorScheme.surfaceVariant,
-                        shape = RoundedCornerShape(50.dp)
-                    )
-                    .padding(horizontal = 14.dp)
-                    .focusRequester(focusRequester),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Icon(
-                    painter = logoPainter,
-                    contentDescription = "App Logo",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(36.dp)
-                )
-                Box(
-                    modifier = Modifier.weight(1f),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    if (searchQuery.isEmpty()) {
-                        Text(
-                            text = "Procurar pousadas...",
-                            style = TextStyle(
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                                    alpha = 0.6f
-                                ),
-                                fontSize = 14.sp
-                            )
-                        )
-                    }
-                    innerTextField()
-                }
+    Row(
+        modifier = modifier.padding(end = 16.dp, start = 8.dp, top = 8.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        if (onBack != null) {
+            MapBackButton(onClick = onBack)
+        }
 
-                IconButton(
-                    enabled = searchQuery.isNotEmpty(),
-                    onClick = {
-                        searchQuery = ""
-                        onSearchQueryChanged("", false)
-                        focusManager.clearFocus()
-                        focusRequester.freeFocus()
-                    },
-                    modifier = Modifier.focusRequester(focusRequester).size(36.dp),
-                    shape = RoundedCornerShape(50),
-                    colors = IconButtonColors(
-                        containerColor = Color.Transparent,
-                        contentColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-                        disabledContainerColor = Color.Transparent,
-                        disabledContentColor = Color.Transparent,
-                    )
+        BasicTextField(
+            value = searchQuery,
+            onValueChange = {
+                searchQuery = it
+                onSearchQueryChanged(it, true)
+            },
+            singleLine = true,
+            textStyle = TextStyle(
+                color = MaterialTheme.colorScheme.primary,
+                fontSize = 16.sp
+            ),
+            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+            decorationBox = { innerTextField ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(46.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            shape = RoundedCornerShape(50.dp)
+                        )
+                        .padding(horizontal = 14.dp)
+                        .focusRequester(focusRequester),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Clear,
-                        contentDescription = "Clear Search",
-                        modifier = Modifier.size(18.dp)
+                        painter = logoPainter,
+                        contentDescription = "App Logo",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(36.dp)
                     )
-                }
+                    Box(
+                        modifier = Modifier.weight(1f),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        if (searchQuery.isEmpty()) {
+                            Text(
+                                text = "Procurar pousadas...",
+                                style = TextStyle(
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                        alpha = 0.6f
+                                    ),
+                                    fontSize = 14.sp
+                                )
+                            )
+                        }
+                        innerTextField()
+                    }
 
+                    IconButton(
+                        enabled = searchQuery.isNotEmpty(),
+                        onClick = {
+                            searchQuery = ""
+                            onSearchQueryChanged("", false)
+                            focusManager.clearFocus()
+                            focusRequester.freeFocus()
+                        },
+                        modifier = Modifier
+                            .focusRequester(focusRequester)
+                            .size(36.dp),
+                        shape = RoundedCornerShape(50),
+                        colors = IconButtonColors(
+                            containerColor = Color.Transparent,
+                            contentColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                            disabledContainerColor = Color.Transparent,
+                            disabledContentColor = Color.Transparent,
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Clear,
+                            contentDescription = "Clear Search",
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+
+                }
             }
-        },
-        modifier = modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-    )
+        )
+    }
+
 }
