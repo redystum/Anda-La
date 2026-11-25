@@ -94,7 +94,7 @@ fun SavedTripScreen(
         sheetShadowElevation = 8.dp,
         sheetTonalElevation = 0.dp,
         sheetShape = MaterialTheme.shapes.large,
-        sheetPeekHeight = 560.dp,
+        sheetPeekHeight = 400.dp,
         sheetContent = {
             val trip = details
             when {

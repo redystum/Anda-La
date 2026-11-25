@@ -10,7 +10,14 @@ data class RoutesRequestDto(
     val computeAlternativeRoutes: Boolean = true,
     val languageCode: String = "pt-PT",
     val units: String = "METRIC",
-    val departureTime: String? = null
+    val departureTime: String? = null,
+    val transitPreferences: TransitPreferencesDto? = null
+)
+
+@Serializable
+data class TransitPreferencesDto(
+    /** Restricts the transit modes returned, e.g. TRAIN for train-only journeys. */
+    val allowedTravelModes: List<String> = emptyList()
 )
 
 @Serializable
@@ -70,6 +77,8 @@ data class LegDto(
 @Serializable
 data class StepDto(
     val travelMode: String? = null,
+    val distanceMeters: Int? = null,
+    val staticDuration: String? = null,
     val transitDetails: TransitDetailsDto? = null
 )
 

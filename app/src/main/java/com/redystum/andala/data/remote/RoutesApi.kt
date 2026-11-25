@@ -50,6 +50,8 @@ class RoutesApi(
             header(
                 "X-Goog-FieldMask",
                 "routes.duration,routes.legs.steps.travelMode," +
+                    "routes.legs.steps.distanceMeters," +
+                    "routes.legs.steps.staticDuration," +
                     "routes.legs.steps.transitDetails"
             )
             setBody(request)

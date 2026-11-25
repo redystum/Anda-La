@@ -41,7 +41,11 @@ class RoutesService(
                         RoutesRequestDto(
                             origin = WaypointDto(LocationDto(origin)),
                             destination = WaypointDto(LocationDto(destination)),
-                            departureTime = departureTime
+                            departureTime = departureTime,
+                            // The app plans train trips, so only rail services are requested.
+                            transitPreferences = TransitPreferencesDto(
+                                allowedTravelModes = listOf("TRAIN")
+                            )
                         )
                     )
                     Log.d(
@@ -72,12 +76,19 @@ class RoutesService(
         }
 
         // The API is queried for several departure times and may return the same
-        // journey more than once. Keep only the first occurrence of each itinerary,
-        // ignoring duration and departure time.
+        // journey more than once. Options are deduplicated per itinerary (keeping
+        // the fastest variant) and ordered by total travel time, so the first one
+        // is the fastest and becomes the default selection in the UI.
         val uniqueRoutes = routes
             .groupBy { it.legIndex }
             .toSortedMap()
-            .flatMap { (_, legRoutes) -> legRoutes.distinctBy { it.journeySignature() } }
+            .flatMap { (_, legRoutes) ->
+                legRoutes
+                    .groupBy { it.journeySignature() }
+                    .values
+                    .map { options -> options.minBy { it.durationMinutes ?: Int.MAX_VALUE } }
+                    .sortedBy { it.durationMinutes ?: Int.MAX_VALUE }
+            }
 
         Log.d(
             "RoutesService",

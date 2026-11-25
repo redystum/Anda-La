@@ -3,7 +3,6 @@ package com.redystum.andala.ui.screens.routeResultScreen.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,13 +25,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.DirectionsBoat
-import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.DirectionsSubway
-import androidx.compose.material.icons.filled.DirectionsWalk
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Train
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.BottomSheetScaffoldState
@@ -50,10 +46,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -65,12 +57,14 @@ import androidx.compose.ui.unit.dp
 import com.redystum.andala.data.Pousada
 import com.redystum.andala.data.Pousadas
 import com.redystum.andala.data.remote.RouteOption
+import com.redystum.andala.data.remote.StepDto
 import com.redystum.andala.data.remote.TransitDetailsDto
 import com.redystum.andala.data.remote.TransitLineDto
 import com.redystum.andala.ui.screens.exploreScreen.components.MapComponent
 import com.redystum.andala.ui.theme.AndaLaTheme
 import com.redystum.andala.ui.theme.tripRouteColor
 import com.redystum.andala.ui.viewmodel.TripViewModel
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -343,6 +337,7 @@ private fun TripSection(
         }
 
         LazyRow(
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             itemsIndexed(
@@ -358,7 +353,7 @@ private fun TripSection(
                     originName = originName,
                     destinationName = destinationName,
                     onClick = { onOptionSelected(optionIndex) },
-                    modifier = Modifier.fillMaxWidth(0.88f)
+                    modifier = Modifier.fillParentMaxWidth(0.88f)
                 )
             }
         }
@@ -375,43 +370,13 @@ internal fun RouteOptionCard(
     onClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
-    var detailsExpanded by remember(option) { mutableStateOf(false) }
-
-    val transitDetails = option.route.legs
-        .flatMap { it.steps }
-        .mapNotNull { it.transitDetails }
-    val lineName = transitDetails
-        .firstNotNullOfOrNull { it.transitLine?.name }
-        ?: option.transitLines.firstOrNull()
-        ?: "Ligação"
+    val steps = option.route.legs.flatMap { it.steps }
+    val transitDetails = steps.mapNotNull { it.transitDetails }
     val vehicleIcon = vehicleIcon(transitDetails)
     val transportLabel = transportTypeLabel(transitDetails)
-    val stopNames = transitDetails
-        .flatMap { details ->
-            listOfNotNull(
-                details.stopDetails?.departureStop?.name,
-                details.stopDetails?.arrivalStop?.name
-            )
-        }
-        .distinct()
-
-    val timelineStops = if (stopNames.size >= 2) {
-        stopNames.mapIndexed { index, name ->
-            TimelineStopData(
-                name = name,
-                label = when (index) {
-                    0 -> "Partida"
-                    stopNames.lastIndex -> "Chegada"
-                    else -> "Transbordo"
-                }
-            )
-        }
-    } else {
-        listOf(
-            TimelineStopData(originName, "Partida"),
-            TimelineStopData(destinationName, "Chegada")
-        )
-    }
+    val headerSummary = transitSummary(transitDetails)
+    val journeyItems = buildJourneyItems(steps, originName, destinationName)
+    val legTitle = "$originName → $destinationName"
 
     Card(
         onClick = { onClick?.invoke() },
@@ -459,13 +424,25 @@ internal fun RouteOptionCard(
                         .padding(start = 12.dp)
                 ) {
                     Text(
-                        text = lineName,
+                        text = legTitle,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        maxLines = 1,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (headerSummary.isNotBlank()) {
+                        Text(
+                            text = headerSummary,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(top = 4.dp)
+                    ) {
                         Box(
                             modifier = Modifier
                                 .weight(1f, fill = false)
@@ -512,93 +489,195 @@ internal fun RouteOptionCard(
                 color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
             )
 
-            TripTimeline(
-                stops = timelineStops,
-                tripColor = tripColor,
-                detailsExpanded = detailsExpanded,
-                onToggleDetails = { detailsExpanded = !detailsExpanded },
-                detailsText = departureDetails(option, transitDetails)
+            JourneyTimeline(
+                items = journeyItems,
+                tripColor = tripColor
             )
+        }
+    }
+}
 
-            HorizontalDivider(
-                modifier = Modifier.padding(vertical = 12.dp),
-                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
+private sealed interface JourneyItem {
+    data class Stop(
+        val time: String?,
+        val name: String,
+        val isStart: Boolean = false,
+        val isEnd: Boolean = false
+    ) : JourneyItem
+
+    data class Walk(
+        val durationSeconds: Int?,
+        val distanceMeters: Int?
+    ) : JourneyItem
+
+    data class Transit(
+        val details: TransitDetailsDto,
+        val durationMinutes: Int?
+    ) : JourneyItem
+}
+
+@Composable
+private fun JourneyTimeline(
+    items: List<JourneyItem>,
+    tripColor: Color
+) {
+    items.forEachIndexed { index, item ->
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min)
+        ) {
+            TimelineRail(
+                isLast = index == items.lastIndex,
+                filled = item is JourneyItem.Stop && (item.isStart || item.isEnd),
+                showDot = item is JourneyItem.Stop,
+                color = tripColor,
+                modifier = Modifier.fillMaxHeight()
             )
-
-            Row(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = "Tempo de viagem:",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                Text(
-                    text = "${formatDuration(option.durationMinutes ?: 0)} (total)",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold
-                )
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 12.dp)
+                    .padding(bottom = if (index == items.lastIndex) 0.dp else 10.dp)
+            ) {
+                when (item) {
+                    is JourneyItem.Stop -> JourneyStopRow(item)
+                    is JourneyItem.Walk -> JourneyWalkRow(item)
+                    is JourneyItem.Transit -> JourneyTransitRow(item, tripColor)
+                }
             }
         }
     }
 }
 
 @Composable
-private fun TripTimeline(
-    stops: List<TimelineStopData>,
-    tripColor: Color,
-    detailsExpanded: Boolean,
-    onToggleDetails: () -> Unit,
-    detailsText: String
-) {
-    stops.forEachIndexed { index, stop ->
-        TimelineStopRow(
-            stop = stop,
-            tripColor = tripColor,
-            isLast = index == stops.lastIndex
-        )
-
-        if (index == 0) {
-            TimelineDetailsRow(
-                tripColor = tripColor,
-                expanded = detailsExpanded,
-                onToggle = onToggleDetails,
-                detailsText = detailsText
-            )
+private fun JourneyStopRow(stop: JourneyItem.Stop) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(modifier = Modifier.width(50.dp)) {
+            if (stop.time != null) {
+                Text(
+                    text = stop.time,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
+        Text(
+            text = stop.name,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = if (stop.isStart || stop.isEnd) {
+                FontWeight.Bold
+            } else {
+                FontWeight.Medium
+            },
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 
 @Composable
-private fun TimelineStopRow(
-    stop: TimelineStopData,
-    tripColor: Color,
-    isLast: Boolean
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(IntrinsicSize.Min)
-    ) {
-        TimelineRail(
-            isLast = isLast,
-            filled = isLast,
-            color = tripColor,
-            modifier = Modifier.fillMaxHeight()
+private fun JourneyWalkRow(item: JourneyItem.Walk) {
+    val details = buildList {
+        add("A pé")
+        item.durationSeconds
+            ?.let(::secondsToMinutes)
+            ?.takeIf { it > 0 }
+            ?.let { add(formatDuration(it)) }
+        item.distanceMeters
+            ?.takeIf { it > 0 }
+            ?.let { add(formatDistance(it)) }
+    }.joinToString(" · ")
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.DirectionsWalk,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(16.dp)
         )
-        Column(
-            modifier = Modifier
-                .padding(start = 12.dp)
-                .padding(bottom = 8.dp)
-        ) {
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(
+            text = details,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun JourneyTransitRow(
+    item: JourneyItem.Transit,
+    tripColor: Color
+) {
+    val details = item.details
+    val line = details.transitLine
+    val badgeText = line?.nameShort?.takeIf { it.isNotBlank() }
+        ?: line?.name?.takeIf { it.isNotBlank() }
+        ?: "Transporte"
+    val badgeColor = parseTransitColor(line?.color) ?: tripColor
+    val badgeTextColor = parseTransitColor(line?.textColor) ?: Color.White
+    val operator = line?.agencies
+        ?.mapNotNull { it.name?.takeIf { name -> name.isNotBlank() } }
+        ?.distinct()
+        ?.joinToString(" / ")
+    val service = line
+        ?.takeIf(::isRailLine)
+        ?.let(::railServiceLabel)
+    val summary = buildList {
+        if (!operator.isNullOrBlank()) add("Empresa: $operator")
+        if (!service.isNullOrBlank()) add("Serviço: $service")
+    }.joinToString(" · ")
+    val duration = buildList {
+        item.durationMinutes
+            ?.takeIf { it > 0 }
+            ?.let { add(formatDuration(it)) }
+        stopsLabel(details.stopCount)?.let { add(it) }
+    }.joinToString(" ")
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .background(
+                        color = badgeColor,
+                        shape = RoundedCornerShape(6.dp)
+                    )
+                    .padding(horizontal = 6.dp, vertical = 2.dp)
+            ) {
+                Text(
+                    text = badgeText,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = badgeTextColor,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            if (!details.headsign.isNullOrBlank()) {
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = details.headsign,
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+        if (summary.isNotBlank()) {
             Text(
-                text = stop.name,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
+                text = summary,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 2.dp)
             )
+        }
+        if (duration.isNotBlank()) {
             Text(
-                text = stop.label,
+                text = duration,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -606,65 +685,203 @@ private fun TimelineStopRow(
     }
 }
 
-@Composable
-private fun TimelineDetailsRow(
-    tripColor: Color,
-    expanded: Boolean,
-    onToggle: () -> Unit,
-    detailsText: String
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(IntrinsicSize.Min)
-    ) {
-        TimelineRail(
-            isLast = false,
-            filled = false,
-            showDot = false,
-            color = tripColor,
-            modifier = Modifier.fillMaxHeight()
+private fun buildJourneyItems(
+    steps: List<StepDto>,
+    originName: String,
+    destinationName: String
+): List<JourneyItem> {
+    val items = mutableListOf<JourneyItem>()
+
+    val firstTransitIndex = steps.indexOfFirst { it.transitDetails != null }
+    val lastTransitIndex = steps.indexOfLast { it.transitDetails != null }
+
+    val firstDeparture = steps.getOrNull(firstTransitIndex)
+        ?.transitDetails
+        ?.stopDetails
+        ?.departureTime
+        ?.let(::formatIsoTime)
+    val leadingWalkMinutes = if (firstTransitIndex >= 0) {
+        secondsToMinutes(
+            steps.take(firstTransitIndex).sumOf { stepDurationSeconds(it) ?: 0 }
         )
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .padding(start = 12.dp)
-                .padding(bottom = 8.dp)
-        ) {
-            Row(
-                modifier = Modifier
-                    .clickable(onClick = onToggle)
-                    .padding(vertical = 2.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Detalhes da viagem",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.SemiBold
+    } else {
+        0
+    }
+    val startTime = shiftTime(firstDeparture, -leadingWalkMinutes)
+
+    val lastArrival = steps.getOrNull(lastTransitIndex)
+        ?.transitDetails
+        ?.stopDetails
+        ?.arrivalTime
+        ?.let(::formatIsoTime)
+    val trailingWalkMinutes = if (lastTransitIndex >= 0) {
+        secondsToMinutes(
+            steps.drop(lastTransitIndex + 1).sumOf { stepDurationSeconds(it) ?: 0 }
+        )
+    } else {
+        0
+    }
+    val endTime = shiftTime(lastArrival, trailingWalkMinutes)
+
+    items.add(JourneyItem.Stop(startTime, originName, isStart = true))
+
+    steps.forEach { step ->
+        val transit = step.transitDetails
+        if (transit == null) {
+            items.add(
+                JourneyItem.Walk(
+                    durationSeconds = stepDurationSeconds(step),
+                    distanceMeters = step.distanceMeters
                 )
-                Icon(
-                    imageVector = if (expanded) {
-                        Icons.Default.KeyboardArrowUp
-                    } else {
-                        Icons.Default.KeyboardArrowDown
-                    },
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp)
-                )
+            )
+        } else {
+            val stopDetails = transit.stopDetails
+            val departureStop = stopDetails?.departureStop?.name
+            val departureTime = formatIsoTime(stopDetails?.departureTime)
+                ?: transit.localizedValues?.departureTime?.time?.text
+            if (!departureStop.isNullOrBlank()) {
+                items.addStop(JourneyItem.Stop(departureTime, departureStop))
             }
-            if (expanded) {
-                Text(
-                    text = detailsText,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 2.dp)
+
+            items.add(
+                JourneyItem.Transit(
+                    details = transit,
+                    durationMinutes = stepDurationMinutes(step)
                 )
+            )
+
+            val arrivalStop = stopDetails?.arrivalStop?.name
+            val arrivalTime = formatIsoTime(stopDetails?.arrivalTime)
+                ?: transit.localizedValues?.arrivalTime?.time?.text
+            if (!arrivalStop.isNullOrBlank()) {
+                items.addStop(JourneyItem.Stop(arrivalTime, arrivalStop))
             }
         }
     }
+
+    val lastStopIndex = items.indexOfLast { it is JourneyItem.Stop }
+    val lastStop = items.getOrNull(lastStopIndex) as? JourneyItem.Stop
+    if (lastStop == null || lastStop.name != destinationName) {
+        items.add(
+            JourneyItem.Stop(
+                time = endTime,
+                name = destinationName,
+                isEnd = true
+            )
+        )
+    } else {
+        items[lastStopIndex] = lastStop.copy(
+            isEnd = true,
+            time = if (trailingWalkMinutes > 0) {
+                endTime ?: lastStop.time
+            } else {
+                lastStop.time ?: endTime
+            }
+        )
+    }
+
+    return items.mergeWalkSteps()
 }
+
+/**
+ * Google returns one step per walking direction, which would render as a long
+ * series of "A pé" rows. Collapse consecutive walking steps into a single row
+ * with the combined duration and distance.
+ */
+private fun List<JourneyItem>.mergeWalkSteps(): List<JourneyItem> {
+    val merged = mutableListOf<JourneyItem>()
+    forEach { item ->
+        val previous = merged.lastOrNull()
+        if (item is JourneyItem.Walk && previous is JourneyItem.Walk) {
+            merged[merged.lastIndex] = JourneyItem.Walk(
+                durationSeconds = sumOrNull(previous.durationSeconds, item.durationSeconds),
+                distanceMeters = sumOrNull(previous.distanceMeters, item.distanceMeters)
+            )
+        } else {
+            merged.add(item)
+        }
+    }
+    return merged
+}
+
+private fun sumOrNull(first: Int?, second: Int?): Int? =
+    if (first == null && second == null) null else (first ?: 0) + (second ?: 0)
+
+private fun MutableList<JourneyItem>.addStop(stop: JourneyItem.Stop) {
+    val last = lastOrNull()
+    if (last is JourneyItem.Stop && last.name == stop.name) {
+        if (last.time == null && stop.time != null) {
+            this[lastIndex] = last.copy(time = stop.time)
+        }
+        return
+    }
+    add(stop)
+}
+
+private fun stepDurationSeconds(step: StepDto): Int? =
+    step.staticDuration
+        ?.removeSuffix("s")
+        ?.toIntOrNull()
+        ?.takeIf { it > 0 }
+
+private fun secondsToMinutes(seconds: Int): Int = (seconds + 30) / 60
+
+private fun stepDurationMinutes(step: StepDto): Int? =
+    stepDurationSeconds(step)?.let(::secondsToMinutes)
+
+private fun formatIsoTime(value: String?): String? {
+    if (value.isNullOrBlank()) return null
+    val time = value.substringAfter('T', "").take(5)
+    return time.takeIf { it.length == 5 && it[2] == ':' }
+}
+
+private fun shiftTime(time: String?, minutes: Int): String? {
+    if (time == null) return null
+    val hour = time.substringBefore(':').toIntOrNull() ?: return null
+    val minute = time.substringAfter(':').take(2).toIntOrNull() ?: return null
+    val total = (((hour * 60 + minute + minutes) % 1440) + 1440) % 1440
+    return "%02d:%02d".format(total / 60, total % 60)
+}
+
+private fun formatDistance(meters: Int): String {
+    if (meters < 1000) return "$meters m"
+    val kilometers = meters / 1000.0
+    val text = if (kilometers == kilometers.toInt().toDouble()) {
+        kilometers.toInt().toString()
+    } else {
+        String.format(Locale.getDefault(), "%.1f", kilometers).replace('.', ',')
+    }
+    return "$text km"
+}
+
+private fun stopsLabel(stopCount: Int?): String? = when {
+    stopCount == null -> null
+    stopCount <= 0 -> "(sem paragens)"
+    stopCount == 1 -> "(1 paragem)"
+    else -> "($stopCount paragens)"
+}
+
+private fun transitSummary(transitDetails: List<TransitDetailsDto>): String {
+    val lines = transitDetails.mapNotNull { it.transitLine }
+    val operators = lines
+        .flatMap { it.agencies }
+        .mapNotNull { it.name?.takeIf { name -> name.isNotBlank() } }
+        .distinct()
+    val services = lines
+        .filter(::isRailLine)
+        .mapNotNull(::railServiceLabel)
+        .distinct()
+
+    return buildList {
+        if (operators.isNotEmpty()) add(operators.joinToString(" / "))
+        if (services.isNotEmpty()) add(services.joinToString(" / "))
+    }.joinToString(" · ")
+}
+
+private fun parseTransitColor(value: String?): Color? =
+    value?.let { hex ->
+        runCatching { Color(android.graphics.Color.parseColor(hex)) }.getOrNull()
+    }
 
 @Composable
 private fun TimelineRail(
@@ -703,11 +920,6 @@ private fun TimelineRail(
     }
 }
 
-private data class TimelineStopData(
-    val name: String,
-    val label: String
-)
-
 internal fun routeEndpointNames(
     legIndex: Int,
     pousadas: List<Pousada>,
@@ -737,8 +949,8 @@ private fun vehicleIcon(transitDetails: List<TransitDetailsDto>): ImageVector {
             Icons.Default.DirectionsBoat
         vehicleTypes.any {
             it.contains("BUS") || it.contains("TROLLEY") || it.contains("COACH")
-        } -> Icons.Default.DirectionsBus
-        else -> Icons.Default.DirectionsWalk
+        } -> Icons.Default.Train
+        else -> Icons.AutoMirrored.Filled.DirectionsWalk
     }
 }
 
@@ -777,21 +989,54 @@ private fun transportLabel(line: TransitLineDto): String {
     }
 }
 
-private fun departureDetails(
-    option: RouteOption,
-    transitDetails: List<TransitDetailsDto>
-): String {
-    val transfers = (transitDetails.size - 1).coerceAtLeast(0)
-    val transferText = when (transfers) {
-        0 -> "sem transbordos"
-        1 -> "1 transbordo"
-        else -> "$transfers transbordos"
+private fun isRailLine(line: TransitLineDto): Boolean {
+    val type = line.vehicle?.type?.uppercase().orEmpty()
+    if (
+        type.contains("RAIL") ||
+        type.contains("TRAIN") ||
+        type.contains("SUBWAY") ||
+        type.contains("METRO")
+    ) {
+        return true
     }
-    return "Partida às ${formatTime(option.departureTime)} · $transferText"
+
+    val name = (line.name ?: line.nameShort).orEmpty().lowercase()
+    return "comboio" in name
 }
 
-private fun formatTime(dateTime: String): String =
-    dateTime.substringAfter('T').take(5).ifBlank { "—" }
+/**
+ * Human readable rail service, e.g. "Intercidades (IC)" or "Regional (R)".
+ */
+private fun railServiceLabel(line: TransitLineDto): String? {
+    val name = line.name.orEmpty()
+    val short = line.nameShort.orEmpty()
+    val text = "$name $short".lowercase()
+
+    val service = when {
+        "alfa" in text || short.equals("ap", ignoreCase = true) -> "Alfa Pendular"
+        "intercidades" in text || short.equals("ic", ignoreCase = true) -> "Intercidades"
+        "interregional" in text || short.equals("ir", ignoreCase = true) -> "InterRegional"
+        "regional" in text || short.equals("r", ignoreCase = true) -> "Regional"
+        "urbano" in text || short.equals("u", ignoreCase = true) -> "Urbano"
+        else -> null
+    }
+
+    val abbreviation = when (service) {
+        "Alfa Pendular" -> "AP"
+        "Intercidades" -> "IC"
+        "InterRegional" -> "IR"
+        "Regional" -> "R"
+        "Urbano" -> "U"
+        else -> null
+    }
+
+    return when {
+        service != null && abbreviation != null -> "$service ($abbreviation)"
+        name.isNotBlank() -> name
+        short.isNotBlank() -> short
+        else -> null
+    }
+}
 
 internal fun formatDuration(minutes: Int): String {
     if (minutes <= 0) return "—"
