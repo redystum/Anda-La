@@ -255,6 +255,7 @@ private fun SavedTripSheet(
                         fontWeight = FontWeight.Bold
                     )
                 }
+                Spacer(modifier = Modifier.height(6.dp))
             }
         }
     }

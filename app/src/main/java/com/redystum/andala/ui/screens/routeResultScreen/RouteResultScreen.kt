@@ -3,9 +3,13 @@ package com.redystum.andala.ui.screens.exploreScreen
 import android.os.Build
 import android.widget.Toast
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -108,26 +112,18 @@ fun RouteResultScreen(
             onRouteSelected = viewModel::selectRoute,
             isLoadingRoutes = viewModel.isLoadingRoutes
         )
-        if (scaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
-            MapBackButton(
-                onClick = {
-                    coroutineScope.launch {
-                        scaffoldState.bottomSheetState.partialExpand()
-                    }
-                },
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .statusBarsPadding()
-                    .padding(8.dp)
-            )
-        } else {
-            MapBackButton(
-                onClick = onBack,
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .statusBarsPadding()
-                    .padding(8.dp)
-            )
+
+        AnimatedVisibility(
+            visible = scaffoldState.bottomSheetState.currentValue != SheetValue.Expanded,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .statusBarsPadding()
+                .padding(8.dp)
+        ) {
+            MapBackButton(onClick = onBack)
         }
+
     }
 }

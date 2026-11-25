@@ -1,6 +1,7 @@
 package com.redystum.andala
 
 import android.content.Context
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -13,6 +14,7 @@ import com.redystum.andala.ui.navigation.AppNavigation
 import com.redystum.andala.ui.theme.AndaLaTheme
 import com.redystum.andala.BuildConfig
 import android.preference.PreferenceManager
+import androidx.annotation.RequiresApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.ArrowForward
@@ -28,6 +30,7 @@ import org.osmdroid.config.Configuration
 import androidx.core.content.edit
 
 class MainActivity : ComponentActivity() {
+    @RequiresApi(Build.VERSION_CODES.P)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -81,6 +84,14 @@ class MainActivity : ComponentActivity() {
                                 null,
                                 null,
                                 R.raw.step_4
+                            ),
+                            OnboardingPage(
+                                "Veja as suas viagens guardadas",
+                                "Veja as suas viagens guardadas e veja os seus detalhes",
+                                null,
+                                null,
+                                null,
+                                R.raw.step_5
                             )
                         ),
                         onFinish = {
